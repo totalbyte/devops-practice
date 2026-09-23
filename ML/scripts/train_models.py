@@ -1,23 +1,23 @@
 import os
+
+import joblib
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import accuracy_score
-import joblib
+from sklearn.model_selection import train_test_split
 
 from relativa_ml.ml_constants import (
-    CLOSURE_FEATURES,
     CHURN_FEATURES,
+    CLOSURE_FEATURES,
     DAYS_UNTIL_CLOSE_MEDIAN,
     HIST_CLOSE_RATE_MEDIAN,
 )
 
-
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(SCRIPTS_DIR)
-MODELS_DIR = os.path.join(BASE_DIR, 'ml_api', 'models')
-DATA_DIR = os.path.join(BASE_DIR, 'data')
+MODELS_DIR = os.path.join(BASE_DIR, "ml_api", "models")
+DATA_DIR = os.path.join(BASE_DIR, "data")
 os.makedirs(MODELS_DIR, exist_ok=True)
 os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -26,11 +26,18 @@ RANDOM_SEED = int(os.environ.get("ML_RANDOM_SEED", "42"))
 HIGH_VALUE_RATIO = float(os.environ.get("ML_HIGH_VALUE_RATIO", "0.03"))
 MAX_DEAL_VALUE = float(os.environ.get("ML_MAX_DEAL_VALUE", "5000000"))
 MIN_ACCURACY = float(os.environ.get("ML_MIN_ACCURACY", "0.70"))
-ENFORCE_MIN_ACCURACY = os.environ.get("ML_ENFORCE_ACCURACY", "0").lower() in ("1", "true", "yes")
+ENFORCE_MIN_ACCURACY = os.environ.get("ML_ENFORCE_ACCURACY", "0").lower() in (
+    "1",
+    "true",
+    "yes",
+)
 CLOSURE_LABEL_NOISE = float(os.environ.get("ML_CLOSURE_LABEL_NOISE", "0.03"))
 CHURN_LABEL_NOISE = float(os.environ.get("ML_CHURN_LABEL_NOISE", "0.04"))
 
-def _sample_deal_values(rng, size, high_value_ratio=HIGH_VALUE_RATIO, max_deal_value=MAX_DEAL_VALUE):
+
+def _sample_deal_values(
+    rng, size, high_value_ratio=HIGH_VALUE_RATIO, max_deal_value=MAX_DEAL_VALUE
+):
     base = rng.lognormal(mean=10.8, sigma=0.8, size=size)
     high_mask = rng.random(size) < high_value_ratio
     if high_mask.any():
@@ -76,21 +83,29 @@ def generate_and_train_closure(row_count, rng):
     print(f"[1/2] generation and training of closure model ({row_count} rows)...")
 
     deal_value = _sample_deal_values(rng, row_count)
-    avg_deal_value = np.clip(deal_value * rng.normal(1.0, 0.15, size=row_count), 100.0, None)
+    avg_deal_value = np.clip(
+        deal_value * rng.normal(1.0, 0.15, size=row_count), 100.0, None
+    )
     days_since_created = rng.integers(1, 365, size=row_count)
     stage_encoded = rng.integers(1, 5, size=row_count)
-    num_interactions = np.clip(days_since_created // 7 + rng.integers(0, 5, size=row_count), 0, 120)
+    num_interactions = np.clip(
+        days_since_created // 7 + rng.integers(0, 5, size=row_count), 0, 120
+    )
 
     days_until_raw = rng.integers(-60, 365, size=row_count)
-    days_until_expected_close = _apply_missing(days_until_raw, 0.2, DAYS_UNTIL_CLOSE_MEDIAN, rng)
+    days_until_expected_close = _apply_missing(
+        days_until_raw, 0.2, DAYS_UNTIL_CLOSE_MEDIAN, rng
+    )
 
     hist_close_rate_raw = rng.uniform(0, 100, size=row_count)
-    historical_close_rate = _apply_missing(hist_close_rate_raw, 0.2, HIST_CLOSE_RATE_MEDIAN, rng)
+    historical_close_rate = _apply_missing(
+        hist_close_rate_raw, 0.2, HIST_CLOSE_RATE_MEDIAN, rng
+    )
 
     client_tenure_days = rng.integers(30, 3650, size=row_count)
     client_lifetime_value = avg_deal_value * rng.uniform(1.0, 12.0, size=row_count)
 
-    base_date = pd.Timestamp.now('UTC').normalize()
+    base_date = pd.Timestamp.now("UTC").normalize()
     expected_close = _build_expected_close(days_until_expected_close, base_date)
 
     avg_deal_value_log = np.log1p(avg_deal_value)
@@ -139,7 +154,9 @@ def generate_and_train_closure(row_count, rng):
     X = df[list(CLOSURE_FEATURES)]
     y = df["is_closed"]
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
     model = GradientBoostingClassifier(random_state=42)
     model.fit(X_train, y_train)
 
@@ -160,15 +177,19 @@ def generate_and_train_churn(row_count, rng):
     avg_deal_value = _sample_deal_values(rng, row_count)
 
     hist_close_rate_raw = rng.uniform(0, 100, size=row_count)
-    historical_close_rate = _apply_missing(hist_close_rate_raw, 0.2, HIST_CLOSE_RATE_MEDIAN, rng)
+    historical_close_rate = _apply_missing(
+        hist_close_rate_raw, 0.2, HIST_CLOSE_RATE_MEDIAN, rng
+    )
 
     days_until_raw = rng.integers(-60, 365, size=row_count)
-    days_until_expected_close = _apply_missing(days_until_raw, 0.2, DAYS_UNTIL_CLOSE_MEDIAN, rng)
+    days_until_expected_close = _apply_missing(
+        days_until_raw, 0.2, DAYS_UNTIL_CLOSE_MEDIAN, rng
+    )
 
     client_tenure_days = rng.integers(30, 3650, size=row_count)
     client_lifetime_value = avg_deal_value * rng.uniform(1.0, 12.0, size=row_count)
 
-    base_date = pd.Timestamp.now('UTC').normalize()
+    base_date = pd.Timestamp.now("UTC").normalize()
     expected_close = _build_expected_close(days_until_expected_close, base_date)
 
     avg_deal_value_log = np.log1p(avg_deal_value)
@@ -211,7 +232,9 @@ def generate_and_train_churn(row_count, rng):
     X = df[list(CHURN_FEATURES)]
     y = df["is_churned"]
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
     model = GradientBoostingClassifier(random_state=42)
     model.fit(X_train, y_train)
 

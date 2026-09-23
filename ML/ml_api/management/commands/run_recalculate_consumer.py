@@ -26,7 +26,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         logging.basicConfig(level=logging.INFO)
-        credentials = pika.PlainCredentials(settings.RABBITMQ_USER, settings.RABBITMQ_PASSWORD)
+        credentials = pika.PlainCredentials(
+            settings.RABBITMQ_USER, settings.RABBITMQ_PASSWORD
+        )
         parameters = pika.ConnectionParameters(
             host=settings.RABBITMQ_HOST,
             port=settings.RABBITMQ_PORT,
@@ -36,8 +38,12 @@ class Command(BaseCommand):
         conn = pika.BlockingConnection(parameters)
         channel = conn.channel()
 
-        channel.exchange_declare(exchange=DOMAIN_EXCHANGE, exchange_type="topic", durable=True)
-        channel.exchange_declare(exchange=RECALC_DLX, exchange_type="fanout", durable=True)
+        channel.exchange_declare(
+            exchange=DOMAIN_EXCHANGE, exchange_type="topic", durable=True
+        )
+        channel.exchange_declare(
+            exchange=RECALC_DLX, exchange_type="fanout", durable=True
+        )
         channel.queue_declare(queue=RECALC_DLQ, durable=True)
         channel.queue_bind(exchange=RECALC_DLX, queue=RECALC_DLQ, routing_key="")
         channel.queue_declare(
@@ -45,7 +51,9 @@ class Command(BaseCommand):
             durable=True,
             arguments={"x-dead-letter-exchange": RECALC_DLX},
         )
-        channel.queue_bind(exchange=DOMAIN_EXCHANGE, queue=RECALC_QUEUE, routing_key=RECALC_ROUTING_KEY)
+        channel.queue_bind(
+            exchange=DOMAIN_EXCHANGE, queue=RECALC_QUEUE, routing_key=RECALC_ROUTING_KEY
+        )
         channel.basic_qos(prefetch_count=8)
 
         def on_message(ch, method_frame, _props, body):
@@ -68,9 +76,13 @@ class Command(BaseCommand):
                 ch.basic_ack(delivery_tag=method_frame.delivery_tag)
                 return
 
-            payload_type = envelope.get("PayloadTypeName") or envelope.get("payloadTypeName")
+            payload_type = envelope.get("PayloadTypeName") or envelope.get(
+                "payloadTypeName"
+            )
             if payload_type != RECALC_PAYLOAD_TYPE:
-                logger.info("Skipping unsupported recalculation payload type: %s", payload_type)
+                logger.info(
+                    "Skipping unsupported recalculation payload type: %s", payload_type
+                )
                 ch.basic_ack(delivery_tag=method_frame.delivery_tag)
                 return
 
@@ -85,19 +97,21 @@ class Command(BaseCommand):
 
             ch.basic_ack(delivery_tag=method_frame.delivery_tag)
 
-        channel.basic_consume(queue=RECALC_QUEUE, on_message_callback=on_message, auto_ack=False)
-        self.stdout.write(self.style.SUCCESS(f"ML recalculation consumer consuming {RECALC_QUEUE}."))
+        channel.basic_consume(
+            queue=RECALC_QUEUE, on_message_callback=on_message, auto_ack=False
+        )
+        self.stdout.write(
+            self.style.SUCCESS(f"ML recalculation consumer consuming {RECALC_QUEUE}.")
+        )
         channel.start_consuming()
 
 
 def try_mark_processed_once(message_id: uuid.UUID) -> bool:
-    insert_sql = (
-        """
+    insert_sql = """
         INSERT INTO rabbitmq_processed_delivery (message_id, consumer_group, processed_at_utc)
         VALUES (%s, %s, NOW())
         ON CONFLICT DO NOTHING
         """
-    )
     with connection.cursor() as cursor:
         cursor.execute(insert_sql, [str(message_id), RECALC_CONSUMER_GROUP])
         return cursor.rowcount == 1
