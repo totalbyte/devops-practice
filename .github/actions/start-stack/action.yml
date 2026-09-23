@@ -1,0 +1,32 @@
+name: Start Relativa stack
+description: >
+  Loads the service images built earlier in this workflow run (artifacts `image-*`)
+  and starts the full docker compose stack from them, without rebuilding anything.
+
+runs:
+  using: composite
+  steps:
+    - name: Download images
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      with:
+        pattern: image-*
+        path: ${{ runner.temp }}/images
+        merge-multiple: true
+
+    - name: Load images
+      shell: bash
+      run: |
+        for archive in "${{ runner.temp }}"/images/*.tar.gz; do
+          gunzip -c "$archive" | docker load
+        done
+
+    - name: Start stack from the loaded images
+      shell: bash
+      run: |
+        cp .env.example .env
+        {
+          echo "IMAGE_REGISTRY=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}"
+          echo "IMAGE_TAG=sha-${GITHUB_SHA::7}"
+        } >> .env
+        docker compose -f docker-compose.yaml -f docker-compose.images.yaml up -d --wait --wait-timeout 600
+        docker compose -f docker-compose.yaml -f docker-compose.images.yaml ps
