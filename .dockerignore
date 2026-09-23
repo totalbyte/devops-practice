@@ -1,0 +1,22 @@
+# Build context for the services built from the repo root
+# (auth, core, graph, audit, migration). Their Dockerfiles copy only
+# the service folder plus Persistence/ and Messaging/.
+.git
+.github
+.env
+.env.*
+**/bin/
+**/obj/
+**/TestResults/
+**/logs/
+**/*.user
+Client/
+ML/
+Gateway/
+tests/
+docs/
+assets/
+ci/
+TestR/
+DBNAV/
+ENDPOINTS/
