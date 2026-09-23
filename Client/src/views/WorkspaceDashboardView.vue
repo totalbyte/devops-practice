@@ -443,7 +443,9 @@ function onPointerUp() {
 
     <!-- Basic-access users: simple grid (5 fixed cards, no overflow) -->
     <div v-else-if="kpis.length" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-      <div v-if="store.isLoadingSummary" v-for="i in 5" :key="i" class="h-24 skeleton-shimmer rounded-xl" />
+      <template v-if="store.isLoadingSummary">
+        <div v-for="i in 5" :key="i" class="h-24 skeleton-shimmer rounded-xl" />
+      </template>
       <div
         v-else
         v-for="kpi in kpis"

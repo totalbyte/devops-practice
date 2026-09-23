@@ -8,7 +8,8 @@
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
-    "type-check": "vue-tsc --build"
+    "type-check": "vue-tsc --build",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@azure/msal-browser": "^5.11.0",
@@ -34,8 +35,11 @@
     "@types/node": "^22.10.0",
     "@types/qrcode": "^1.5.5",
     "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/eslint-config-typescript": "^14.9.0",
     "@vue/tsconfig": "^0.7.0",
     "autoprefixer": "^10.4.20",
+    "eslint": "^10.11.0",
+    "eslint-plugin-vue": "^10.11.0",
     "npm-run-all2": "^7.0.2",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",

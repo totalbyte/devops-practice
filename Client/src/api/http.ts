@@ -52,7 +52,7 @@ export async function gatewayFetch(
   );
 }
 
-async function parseResponse<T>(res: Response, silent = false): Promise<T> {
+async function parseResponse<T>(res: Response): Promise<T> {
   const text = await res.text();
   const body = text ? safeJson(text) : undefined;
 
@@ -113,42 +113,42 @@ function splitInit(init?: ApiRequestInit): { silent: boolean; rest: RequestInit 
 
 export const api = {
   get<T>(path: string, init?: ApiRequestInit): Promise<T> {
-    const { silent, rest } = splitInit(init);
+    const { rest } = splitInit(init);
     return gatewayFetch(path, { ...rest, method: 'GET' }).then((r) =>
-      parseResponse<T>(r, silent),
+      parseResponse<T>(r),
     );
   },
   post<T>(path: string, body?: object, init?: ApiRequestInit): Promise<T> {
-    const { silent, rest } = splitInit(init);
+    const { rest } = splitInit(init);
     return gatewayFetch(path, {
       ...rest,
       method: 'POST',
       headers: jsonHeaders(rest.headers),
       body: body === undefined ? undefined : JSON.stringify(body),
-    }).then((r) => parseResponse<T>(r, silent));
+    }).then((r) => parseResponse<T>(r));
   },
   put<T>(path: string, body?: object, init?: ApiRequestInit): Promise<T> {
-    const { silent, rest } = splitInit(init);
+    const { rest } = splitInit(init);
     return gatewayFetch(path, {
       ...rest,
       method: 'PUT',
       headers: jsonHeaders(rest.headers),
       body: body === undefined ? undefined : JSON.stringify(body),
-    }).then((r) => parseResponse<T>(r, silent));
+    }).then((r) => parseResponse<T>(r));
   },
   patch<T>(path: string, body?: object, init?: ApiRequestInit): Promise<T> {
-    const { silent, rest } = splitInit(init);
+    const { rest } = splitInit(init);
     return gatewayFetch(path, {
       ...rest,
       method: 'PATCH',
       headers: jsonHeaders(rest.headers),
       body: body === undefined ? undefined : JSON.stringify(body),
-    }).then((r) => parseResponse<T>(r, silent));
+    }).then((r) => parseResponse<T>(r));
   },
   del<T>(path: string, init?: ApiRequestInit): Promise<T> {
-    const { silent, rest } = splitInit(init);
+    const { rest } = splitInit(init);
     return gatewayFetch(path, { ...rest, method: 'DELETE' }).then((r) =>
-      parseResponse<T>(r, silent),
+      parseResponse<T>(r),
     );
   },
 };
