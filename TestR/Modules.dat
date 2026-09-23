@@ -6,3 +6,5 @@
 5|Audit Integration|audit-int|Audit\tests\Relativa.Audit.Integration.Tests|Integration|E
 6|Core Integration|core-int|Core\tests\Relativa.Core.Integration.Tests|Integration|F
 7|Graph Integration|graph-int|Graph\tests\Relativa.Graph.Integration.Tests|Integration|G
+8|Gateway|gateway-unit|Gateway\tests\Relativa.Gateway.Tests|Unit|H
+9|Migration|migration-unit|Migration\tests\Relativa.Migration.Tests|Unit|I

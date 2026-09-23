@@ -238,7 +238,7 @@ function Import-Config {
         if ($props['DiscoverGlob'])       { $Script:DiscoverGlob       = "$($cfg.DiscoverGlob)" }       else { $Script:DiscoverGlob       = '*.csproj' }
         if ($props['DiscoverIntRegex'])   { $Script:DiscoverIntRegex   = "$($cfg.DiscoverIntRegex)" }   else { $Script:DiscoverIntRegex   = '\.Integration\.' }
         if ($props['E2EReportFolder'])   { $Script:E2EReportFolder   = "$($cfg.E2EReportFolder)" }     else { $Script:E2EReportFolder   = 'playwright-report' }
-        if ($props['LoadProject'])        { $Script:LoadProject        = "$($cfg.LoadProject)" }        else { $Script:LoadProject        = 'LoadTests/Relativa.LoadTests/Relativa.LoadTests.csproj' }
+        if ($props['LoadProject'])        { $Script:LoadProject        = "$($cfg.LoadProject)" }        else { $Script:LoadProject        = 'tests/load/relativa.js' }
         if ($props['E2EBaseUrl'])        { $Script:E2EBaseUrl        = "$($cfg.E2EBaseUrl)" }          else { $Script:E2EBaseUrl        = 'http://localhost:3000' }
     } catch {}
 }
@@ -933,15 +933,20 @@ function Invoke-LoadSuite {
     Write-Sep 'Load'
     $proj = Join-Path $ScriptRoot $Script:LoadProject
     if (-not (Test-Path $proj)) { Write-C "  [FAIL]  Load project not found: $proj" Red; return }
+    # A .js load project is a k6 script; anything else is run as a .NET project.
+    $isK6     = $proj -like '*.js'
+    $loadCmd  = if ($isK6) { 'k6' } else { $Script:DotnetCmd }
+    $loadArgs = if ($isK6) { @('run', $proj) } else { @('run', '--project', $proj, '-c', 'Release') }
+    $loadName = if ($isK6) { 'Load (k6)' } else { 'Load (NBomber)' }
     if ($Background) {
         $logPath = Join-Path $Script:ResultsDir 'load-bg.log'
         $job = Start-Job -Name 'load' -ScriptBlock {
-            param([string]$p, [string]$lp)
-            $out = & dotnet run --project $p -c Release 2>&1
+            param([string]$cmd, [string[]]$cmdArgs, [string]$lp)
+            $out = & $cmd @cmdArgs 2>&1
             $out | Out-File $lp -Encoding UTF8
             $LASTEXITCODE
-        } -ArgumentList $proj, $logPath
-        $fakeModule = [PSCustomObject]@{ Name='Load (NBomber)'; Short='load'; Id=0; Type='Load' }
+        } -ArgumentList $loadCmd, $loadArgs, $logPath
+        $fakeModule = [PSCustomObject]@{ Name=$loadName; Short='load'; Id=0; Type='Load' }
         $Script:BgJobs.Add([PSCustomObject]@{
             Module=$fakeModule; Job=$job; Started=Get-Date; LogPath=$logPath
             Collected=$false; Ok=$null; Dur=$null; Stopped=$false
@@ -951,10 +956,10 @@ function Invoke-LoadSuite {
         return
     }
     $start = Get-Date
-    $r = Invoke-Process -Command $Script:DotnetCmd -Arguments @('run', '--project', $proj, '-c', 'Release') -WorkDir $ScriptRoot
+    $r = Invoke-Process -Command $loadCmd -Arguments $loadArgs -WorkDir $ScriptRoot
     $ok  = (-not $r.Interrupted) -and ($r.ExitCode -eq 0)
     $dur = Format-Elapsed ((Get-Date) - $start)
-    $Script:Sess.Results.Add([PSCustomObject]@{ Name='Load (NBomber)'; Short='load'; Id=0; Ok=$ok; Dur=$dur; Type='Load' })
+    $Script:Sess.Results.Add([PSCustomObject]@{ Name=$loadName; Short='load'; Id=0; Ok=$ok; Dur=$dur; Type='Load' })
     if ($ok) {
         Update-AnyFailed
         Write-C "  [ OK ]  Load  $dur" Green
@@ -1288,10 +1293,15 @@ function Invoke-Discover {
 
     Write-Ln
     Write-Sep 'Load suite'
-    $loadProj = @(Get-ChildItem -Path $ScriptRoot -Recurse -Filter '*.csproj' -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' -and $_.BaseName -notmatch '\.Tests?$' } |
-        Where-Object { $_.BaseName -match '(?i)(load|perf|benchmark)' -or $_.DirectoryName -match '(?i)[\\/](load|perf|benchmark)[a-z]*[\\/]' } |
+    # Prefer a k6 script in tests/load; fall back to a .NET load project.
+    $loadProj = @(Get-ChildItem -Path (Join-Path $ScriptRoot 'tests/load') -Filter '*.js' -ErrorAction SilentlyContinue |
         Sort-Object FullName) | Select-Object -First 1
+    if (-not $loadProj) {
+        $loadProj = @(Get-ChildItem -Path $ScriptRoot -Recurse -Filter '*.csproj' -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notmatch '[\\/](bin|obj)[\\/]' -and $_.BaseName -notmatch '\.Tests?$' } |
+            Where-Object { $_.BaseName -match '(?i)(load|perf|benchmark)' -or $_.DirectoryName -match '(?i)[\\/](load|perf|benchmark)[a-z]*[\\/]' } |
+            Sort-Object FullName) | Select-Object -First 1
+    }
     if ($loadProj) {
         $rel = (Get-RelativePath $ScriptRoot $loadProj.FullName) -replace '\\', '/'
         Write-C "  [ OK ]  Load project      $rel" Green
