@@ -1,8 +1,8 @@
 # Relativa -- AI Agent Context Guides
 
-> **Last verified:** 2026-05-29 (Org + workspace settings implemented end-to-end: DB, API, frontend views, sidebar. MICROSERVICES.md, ARCHITECTURE.md, PROJECT-STATUS.md, AUDIT-COVERAGE-MATRIX.md updated.)
+> **Last verified:** 2026-09-23 (New CI pipeline: CI-PIPELINE.md added; PROJECT-STATUS.md, PROJECT-OVERVIEW.md, DOCKER-SETUP.md, ARCHITECTURE.md updated.)
 
-Relativa is a multi-tenant CRM / sales-workspace platform built as a microservice monorepo. It includes .NET 10 backend services, a Vue 3 SPA client, a Django ML service, PostgreSQL 16, a YARP API gateway, and SignalR for real-time graph updates. Everything runs locally via Docker Compose.
+Relativa is a multi-tenant CRM / sales-workspace platform built as a microservice monorepo. It includes .NET 10 backend services, a Vue 3 SPA client, a Django ML service, PostgreSQL 16, a YARP API gateway, and SignalR for real-time graph updates. Everything runs locally via Docker Compose; GitHub Actions lints, builds, tests, scans, and publishes every service image to GHCR.
 
 ---
 
@@ -22,6 +22,9 @@ Relativa is a multi-tenant CRM / sales-workspace platform built as a microservic
 | **Added or changed the audit read API** | [AUDIT-LOG-API.md](docs/ai-guides/AUDIT-LOG-API.md), [MICROSERVICES.md](docs/ai-guides/MICROSERVICES.md) |
 | Changed the **general purpose, domain model, or tech stack** | [PROJECT-OVERVIEW.md](docs/ai-guides/PROJECT-OVERVIEW.md) |
 | Added or changed **database entities/tables** | [AUDIT-COVERAGE-MATRIX.md](docs/ai-guides/AUDIT-COVERAGE-MATRIX.md), [AUDIT-AGENT-REQUIREMENTS.md](docs/ai-guides/AUDIT-AGENT-REQUIREMENTS.md) |
+| Changed **CI workflows, lint rules (`.editorconfig`, Ruff, ESLint), `.trivyignore`, `.dockerignore`, or image tags/registry** | [CI-PIPELINE.md](docs/ai-guides/CI-PIPELINE.md) |
+| Added a **service or test project** | Also add it to the matrices in `.github/workflows/ci.yaml` and to [CI-PIPELINE.md](docs/ai-guides/CI-PIPELINE.md) |
+| Renamed/removed a **CI job, its `name:`, or a matrix `service`**, or changed `ci-result.needs` | [CI-PIPELINE.md](docs/ai-guides/CI-PIPELINE.md) -- and tell the user to update the **required status checks** in GitHub → Settings → Branches → `main`. Check names are matched by name only; a stale one blocks every PR merge. This setting is outside the repo, so an agent cannot fix it itself. |
 
 **Audit policy:** For any DB model change, AI agents must read and follow [AUDIT-AGENT-REQUIREMENTS.md](docs/ai-guides/AUDIT-AGENT-REQUIREMENTS.md) before finishing the task.
 
@@ -42,6 +45,7 @@ Relativa is a multi-tenant CRM / sales-workspace platform built as a microservic
 | **Audit Coverage Matrix** | [docs/ai-guides/AUDIT-COVERAGE-MATRIX.md](docs/ai-guides/AUDIT-COVERAGE-MATRIX.md) | Current auditable-table scope and gap tracking |
 | **Audit Agent Requirements** | [docs/ai-guides/AUDIT-AGENT-REQUIREMENTS.md](docs/ai-guides/AUDIT-AGENT-REQUIREMENTS.md) | Mandatory rules for AI agents when creating/changing DB entities/tables |
 | **Audit log API** | [docs/ai-guides/AUDIT-LOG-API.md](docs/ai-guides/AUDIT-LOG-API.md) | `GET /audit-log` / RBAC, query params, response shape, errors |
+| **CI pipeline** | [docs/ai-guides/CI-PIPELINE.md](docs/ai-guides/CI-PIPELINE.md) | GitHub Actions jobs, lint tools, image build + Trivy, GHCR tags, required checks, running checks locally |
 | **RabbitMQ choreography runbook** | [docs/runbooks/RABBITMQ-CHOREOGRAPHY.md](docs/runbooks/RABBITMQ-CHOREOGRAPHY.md) | Exchange names, DLQ purge/idempotency, env keys, automated tests pointer |
 
 ---

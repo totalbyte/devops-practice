@@ -1,6 +1,6 @@
 # Project Overview -- What is Relativa?
 
-> **Last verified:** 2026-05-15
+> **Last verified:** 2026-09-23 (CI/CD + testing rows in the tech stack; repo layout shows workflows, test projects, and CI-related root files.)
 
 > **Maintenance obligation:** If you change the general purpose, domain model, tech stack, or repo layout, update this file and its "Last verified" date before finishing your task. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -60,7 +60,10 @@ The domain model lives entirely in the shared Persistence library (`Persistence/
 | Auth | JWT (symmetric key), BCrypt password hashing, FluentValidation |
 | Logging | Serilog (console + rolling file) |
 | API docs | OpenAPI + Scalar |
-| Containerization | Docker Compose (single bridge network) |
+| Containerization | Docker Compose (single bridge network); images published to GHCR |
+| CI/CD | GitHub Actions (`.github/workflows/ci.yaml`), Trivy image scanning, Dependabot for action pins -- see [CI-PIPELINE.md](CI-PIPELINE.md) |
+| Code quality | `dotnet format` + root `.editorconfig`, Ruff (ML), ESLint + `vue-tsc` (Client) |
+| Testing | xUnit + Testcontainers (.NET), Django test runner (ML), Vitest (Client), Playwright (E2E), k6 (load) |
 
 ---
 
@@ -75,10 +78,15 @@ Relativa/
 ├── SCALAR-GUIDE.md             # Scalar API docs walkthrough
 ├── CONTRIBUTORS.md
 ├── .env.example                # Env template for Docker Compose
+├── .editorconfig               # C# style rules enforced by `dotnet format` in CI
+├── .dockerignore               # Build context filter for repo-root image builds
+├── .trivyignore                # Accepted image vulnerabilities (with reasons)
 ├── docker-compose.yaml         # Full stack definition
+├── docker-compose.images.yaml  # Override: run the stack from prebuilt (GHCR/CI) images
 │
 ├── Gateway/                    # YARP reverse proxy (.NET 10)
-│   └── src/Relativa.Gateway/
+│   ├── src/Relativa.Gateway/
+│   └── tests/Relativa.Gateway.Tests/
 ├── Authentication/             # Auth service (.NET 10, clean architecture)
 │   └── src/
 │       ├── Relativa.Authentication/          # Host (Program.cs, Endpoints)
@@ -98,7 +106,8 @@ Relativa/
 ├── Audit/                      # Audit log API (.NET 10)
 │   └── src/Relativa.Audit/
 ├── Migration/                  # EF Core migration runner (.NET 10 console)
-│   └── src/Relativa.Migration/
+│   ├── src/Relativa.Migration/
+│   └── tests/Relativa.Migration.Tests/   # Model-vs-migrations consistency
 ├── Persistence/                # Shared EF Core entity library (no .sln)
 │   └── src/Relativa.Persistence/
 │       ├── Contracts/          # Audit + choreography envelopes (shared with consumers)
@@ -109,7 +118,16 @@ Relativa/
 ├── ML/                         # Django ML service
 │   ├── ml_api/                 # Django app
 │   └── relativa_ml/            # ML package (future models)
+├── tests/
+│   ├── e2e/                    # Playwright UI tests (run in CI on pull requests)
+│   └── load/relativa.js        # k6 load test (smoke/ramp/spike/soak profiles)
+├── TestR/                      # Local PowerShell test runner (TestR.bat)
 └── .github/
+    ├── workflows/ci.yaml       # CI pipeline (see CI-PIPELINE.md)
+    ├── actions/start-stack/    # Composite action: run compose from CI-built images
+    ├── problem-matchers/       # dotnet format → PR annotations
+    ├── dependabot.yml          # Weekly bumps of SHA-pinned actions
+    ├── CODEOWNERS
     └── pull_request_template.md
 ```
 
