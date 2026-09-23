@@ -1,5 +1,3 @@
-using DotNet.Testcontainers.Builders;
-
 using FluentAssertions;
 
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +20,6 @@ public sealed class EntityFilterIntegrationTests : IAsyncLifetime
         .WithDatabase("filter_test")
         .WithUsername("relativa")
         .WithPassword("test")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
         .Build();
 
     private DbContextOptions<RelativaDbContext> _opts = null!;
@@ -516,9 +513,9 @@ public sealed class EntityFilterIntegrationTests : IAsyncLifetime
             await db.SaveChangesAsync();
         }
 
-        var (items, _) = Sut().GetByWorkspaceAsync(
+        var (items, _) = await Sut().GetByWorkspaceAsync(
             _wsId, _userId, 999, null, null, 0, 100, [], [],
-            excludeLinkedSourceRelTypeId: relTypeId).GetAwaiter().GetResult();
+            excludeLinkedSourceRelTypeId: relTypeId);
 
         items.Should().NotContain(e => e.Id == _entity1Id);
     }
@@ -547,9 +544,9 @@ public sealed class EntityFilterIntegrationTests : IAsyncLifetime
             await db.SaveChangesAsync();
         }
 
-        var (items, _) = Sut().GetByWorkspaceAsync(
+        var (items, _) = await Sut().GetByWorkspaceAsync(
             _wsId, _userId, 999, null, null, 0, 100, [], [],
-            excludeLinkedTargetRelTypeId: relTypeId).GetAwaiter().GetResult();
+            excludeLinkedTargetRelTypeId: relTypeId);
 
         items.Should().NotContain(e => e.Id == _entity3Id);
     }

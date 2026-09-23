@@ -1,5 +1,3 @@
-using DotNet.Testcontainers.Builders;
-
 using FluentAssertions;
 
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +19,6 @@ public sealed class InvitationAndJoinRequestTests : IAsyncLifetime
         .WithDatabase("inv_jr_test")
         .WithUsername("relativa")
         .WithPassword("test")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
         .Build();
 
     private DbContextOptions<RelativaDbContext> _opts = null!;

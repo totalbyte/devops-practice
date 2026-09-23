@@ -48,6 +48,7 @@ class ScoreBatchTests(TestCase):
         response = score_batch(request)
         self.assertEqual(response.status_code, 503)
 
+    @patch("ml_api.views._load_client_inputs")
     @patch("ml_api.views._load_contract_inputs")
     @patch("ml_api.views._load_deal_inputs")
     @patch("ml_api.views._load_analysis_state")
@@ -60,6 +61,7 @@ class ScoreBatchTests(TestCase):
         analysis_mock,
         deal_mock,
         contract_mock,
+        client_mock,
     ):
         schema_mock.return_value = {"type_ids": {}, "rel_ids": {}, "prop_ids": {}}
         ensure_mock.return_value = None
@@ -78,8 +80,13 @@ class ScoreBatchTests(TestCase):
                 }
             }
         ]
-        deal_mock.return_value = {}
+        # Scoring needs a created date and a known status on the deal itself;
+        # deal_value matches the stored average so the analysis is not stale.
+        deal_mock.return_value = {
+            101: {"created_at": date.today(), "status": "pending", "deal_value": 1500.0}
+        }
         contract_mock.return_value = []
+        client_mock.return_value = {}
 
         request = self.factory.post(
             "/api/ml/score/batch", {"entity_ids": [101]}, format="json"

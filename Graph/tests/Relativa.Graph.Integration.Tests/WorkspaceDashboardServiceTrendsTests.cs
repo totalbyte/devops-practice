@@ -1,5 +1,3 @@
-using DotNet.Testcontainers.Builders;
-
 using FluentAssertions;
 
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +21,7 @@ public sealed class WorkspaceDashboardServiceTrendsTests : IAsyncLifetime
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
         .WithImage("postgres:16-alpine").WithDatabase("ws_trends_test")
         .WithUsername("relativa").WithPassword("test")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432)).Build();
+        .Build();
 
     private GraphQueryDbContext _db = null!;
     private IMlRecalculationClient _mlRecalc = null!;
