@@ -1,19 +1,25 @@
 using System.Text;
 using System.Text.Json;
+
 using DotNet.Testcontainers.Builders;
+
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
 using RabbitMQ.Client;
+
 using Relativa.Audit.Infrastructure.Data;
 using Relativa.Audit.Infrastructure.Services;
 using Relativa.Core.Infrastructure.Data;
 using Relativa.Core.Infrastructure.Services.Audit;
-using Relativa.Messaging;
 using Relativa.Persistence.Contracts;
+
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
+
 using Xunit;
 
 using AuditRmqOptions = Relativa.Audit.Infrastructure.Services.RabbitMqAuditOptions;
@@ -152,7 +158,11 @@ public sealed class AuditIntegrationTests : IAsyncLifetime
         var deadline = DateTimeOffset.UtcNow.AddSeconds(timeoutSeconds);
         while (DateTimeOffset.UtcNow < deadline)
         {
-            if (await condition()) return true;
+            if (await condition())
+            {
+                return true;
+            }
+
             await Task.Delay(300);
         }
         return false;

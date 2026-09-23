@@ -1,16 +1,22 @@
 using System.Text;
 using System.Text.Json;
-using DotNet.Testcontainers.Builders;
+
 using FluentAssertions;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
 using NSubstitute;
+
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using Relativa.Graph.ML;
+
 using Relativa.Graph.Messaging;
+using Relativa.Graph.ML;
 using Relativa.Persistence.Contracts;
+
 using Testcontainers.RabbitMq;
+
 using Xunit;
 
 namespace Relativa.Graph.Integration.Tests;

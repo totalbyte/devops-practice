@@ -1,6 +1,8 @@
 using FluentValidation.TestHelper;
+
 using Relativa.Authentication.Application.DTOs;
 using Relativa.Authentication.Application.Validators;
+
 using Xunit;
 
 namespace Relativa.Authentication.Application.Tests;

@@ -1,17 +1,21 @@
 using System.Text;
+
 using FluentValidation;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+
 using Relativa.Audit.Application.Interfaces;
 using Relativa.Audit.Application.Options;
 using Relativa.Audit.Application.Services;
-using Relativa.Audit.Application.Validators;
 using Relativa.Audit.Endpoints;
 using Relativa.Audit.Infrastructure.Data;
 using Relativa.Audit.Infrastructure.Services;
 using Relativa.Audit.Middleware;
+
 using Scalar.AspNetCore;
+
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()

@@ -1,10 +1,15 @@
 using DotNet.Testcontainers.Builders;
+
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Core.Infrastructure.Data;
 using Relativa.Core.Infrastructure.Services.Audit;
 using Relativa.Persistence.Contracts;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Core.Integration.Tests;

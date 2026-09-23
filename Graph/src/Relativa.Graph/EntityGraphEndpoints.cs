@@ -1,8 +1,11 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+
 using Microsoft.Extensions.Options;
+
 using RabbitMQ.Client;
+
 using Relativa.Graph.Messaging;
 using Relativa.Persistence.Contracts;
 
@@ -43,7 +46,9 @@ public static class EntityGraphEndpoints
                 {
                     var reply = await RpcCreateAsync(mq.Value, cmd, ct);
                     if (!reply.Success || string.IsNullOrEmpty(reply.EntityDetailJson))
+                    {
                         return Results.BadRequest(reply.ErrorMessage ?? "Graph create failed.");
+                    }
 
                     return Results.Content(reply.EntityDetailJson, "application/json", statusCode: StatusCodes.Status200OK);
                 }
@@ -60,7 +65,10 @@ public static class EntityGraphEndpoints
     {
         var v = ctx.Request.Headers["X-User-Id"].ToString();
         if (string.IsNullOrEmpty(v) || !int.TryParse(v, out var id))
+        {
             throw new UnauthorizedAccessException("Missing or invalid X-User-Id header.");
+        }
+
         return id;
     }
 
@@ -125,7 +133,9 @@ public static class EntityGraphEndpoints
             }
 
             if (get.BasicProperties?.CorrelationId != correlationId)
+            {
                 continue;
+            }
 
             var replyJson = Encoding.UTF8.GetString(get.Body.ToArray());
             var reply = JsonSerializer.Deserialize<EntityGraphCreateRpcReplyV1>(replyJson, Json);

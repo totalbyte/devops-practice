@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Graph.Data;
 using Relativa.Graph.ML;
 
@@ -24,7 +25,9 @@ public sealed class GraphDataService(GraphQueryDbContext db, IMlScoringClient ml
             .FirstOrDefaultAsync(ct);
 
         if (focalUser is null)
+        {
             return new GraphResponseDto([], []);
+        }
 
         nodes.Add(new GraphNodeDto(
             Id: $"user:{userId}",
@@ -103,7 +106,10 @@ public sealed class GraphDataService(GraphQueryDbContext db, IMlScoringClient ml
         {
             var wsPerms = workspacePermissions.GetValueOrDefault(wsId, []);
             var wsPermList = new List<string> { "view" };
-            if (wsPerms.Contains("manage_ws_settings")) wsPermList.Add("manage");
+            if (wsPerms.Contains("manage_ws_settings"))
+            {
+                wsPermList.Add("manage");
+            }
 
             nodes.Add(new GraphNodeDto(
                 Id: $"workspace:{wsId}",
@@ -192,12 +198,17 @@ public sealed class GraphDataService(GraphQueryDbContext db, IMlScoringClient ml
             foreach (var entityId in entityIds)
             {
                 if (!valuesByEntity.TryGetValue(entityId, out var vals))
+                {
                     continue;
+                }
 
                 foreach (var priorityField in LabelPriority)
                 {
                     var match = vals.FirstOrDefault(v => v.PropertyName == priorityField);
-                    if (match is null) continue;
+                    if (match is null)
+                    {
+                        continue;
+                    }
 
                     var text = match.ValueString?.Trim()
                         ?? match.ValueInt?.ToString()
@@ -235,7 +246,10 @@ public sealed class GraphDataService(GraphQueryDbContext db, IMlScoringClient ml
                 .Where(id => !mlScores.TryGetValue(id, out var s) || !s.ClosureScore.HasValue || !IsInRiskBucket(s.ClosureScore.Value, riskLevel))
                 .ToHashSet();
             foreach (var id in excludedDealIds)
+            {
                 entityWorkspaceMap.Remove(id);
+            }
+
             dealEntityIds = dealEntityIds.Where(id => !excludedDealIds.Contains(id)).ToList();
             entityIds = entityWorkspaceMap.Keys.ToList();
         }
@@ -252,7 +266,9 @@ public sealed class GraphDataService(GraphQueryDbContext db, IMlScoringClient ml
                 .ToListAsync(ct);
 
             foreach (var rel in dealClientRels)
+            {
                 dealClientMap[rel.SourceEntityId] = rel.TargetEntityId;
+            }
 
             var clientIds = dealClientRels.Select(r => r.TargetEntityId).Distinct().ToList();
             if (clientIds.Count > 0)
@@ -265,7 +281,9 @@ public sealed class GraphDataService(GraphQueryDbContext db, IMlScoringClient ml
                     .ToListAsync(ct);
 
                 foreach (var row in ltvRows)
+                {
                     clientLtvMap[row.EntityId] = (double)row.ValueDecimal!;
+                }
             }
         }
 
@@ -274,7 +292,10 @@ public sealed class GraphDataService(GraphQueryDbContext db, IMlScoringClient ml
         foreach (var (dealId, clientId) in dealClientMap)
         {
             if (!mlScores.TryGetValue(dealId, out var score) || score.ClosureScore is null || score.ChurnScore is null)
+            {
                 continue;
+            }
+
             if (!clientDealScores.TryGetValue(clientId, out var list))
             {
                 list = [];
@@ -312,8 +333,15 @@ public sealed class GraphDataService(GraphQueryDbContext db, IMlScoringClient ml
             var wsPerms = workspacePermissions.GetValueOrDefault(primaryWsId, []);
 
             var perms = new List<string> { "view" };
-            if (wsPerms.Contains("edit_entities")) perms.Add("edit");
-            if (wsPerms.Contains("delete_entities")) perms.Add("delete");
+            if (wsPerms.Contains("edit_entities"))
+            {
+                perms.Add("edit");
+            }
+
+            if (wsPerms.Contains("delete_entities"))
+            {
+                perms.Add("delete");
+            }
 
             string? highlightTag = dealHighlightTags.GetValueOrDefault(entityId)
                 ?? clientHighlightTags.GetValueOrDefault(entityId);
@@ -377,8 +405,15 @@ public sealed class GraphDataService(GraphQueryDbContext db, IMlScoringClient ml
             var canDeleteUsers = orgPermissions.Contains("delete_org_users");
 
             var userPerms = new List<string> { "view" };
-            if (canEditUsers) userPerms.Add("edit");
-            if (canDeleteUsers) userPerms.Add("delete");
+            if (canEditUsers)
+            {
+                userPerms.Add("edit");
+            }
+
+            if (canDeleteUsers)
+            {
+                userPerms.Add("delete");
+            }
 
             var orgMembers = await db.UserRoleOrganizations
                 .Where(uro => uro.OrganizationId == organizationId
@@ -391,7 +426,10 @@ public sealed class GraphDataService(GraphQueryDbContext db, IMlScoringClient ml
             foreach (var member in orgMembers.Where(m => !m.IsArchived))
             {
                 var nodeId = $"user:{member.UserId}";
-                if (nodes.Any(n => n.Id == nodeId)) continue;
+                if (nodes.Any(n => n.Id == nodeId))
+                {
+                    continue;
+                }
 
                 nodes.Add(new GraphNodeDto(
                     Id: nodeId,
@@ -420,10 +458,10 @@ public sealed class GraphDataService(GraphQueryDbContext db, IMlScoringClient ml
 
     private static bool IsInRiskBucket(double score, string riskLevel) => riskLevel switch
     {
-        "high"   => score < 33.0,
+        "high" => score < 33.0,
         "medium" => score >= 33.0 && score < 67.0,
-        "low"    => score >= 67.0,
-        _        => true
+        "low" => score >= 67.0,
+        _ => true
     };
 
     private static Dictionary<int, string> ClassifyTopBottom(
@@ -432,17 +470,27 @@ public sealed class GraphDataService(GraphQueryDbContext db, IMlScoringClient ml
         string worstTag)
     {
         if (scores.Count < 2)
+        {
             return [];
+        }
 
         var sorted = scores.OrderByDescending(kv => kv.Value).ToList();
         var cutoff = Math.Max(1, (int)Math.Ceiling(sorted.Count * 0.20));
 
         var result = new Dictionary<int, string>();
         for (var i = 0; i < cutoff; i++)
+        {
             result[sorted[i].Key] = bestTag;
+        }
+
         for (var i = sorted.Count - cutoff; i < sorted.Count; i++)
+        {
             if (!result.ContainsKey(sorted[i].Key))
+            {
                 result[sorted[i].Key] = worstTag;
+            }
+        }
+
         return result;
     }
 }

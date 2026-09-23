@@ -1,7 +1,10 @@
 using FluentAssertions;
+
 using FluentValidation;
 using FluentValidation.Results;
+
 using Moq;
+
 using Relativa.Authentication.Application.DTOs;
 using Relativa.Authentication.Application.Interfaces;
 using Relativa.Authentication.Domain.Interfaces;
@@ -12,6 +15,7 @@ using Relativa.Core.Application.Services;
 using Relativa.Core.Domain.Interfaces;
 using Relativa.Persistence.Contracts;
 using Relativa.Persistence.Entities;
+
 using Xunit;
 
 namespace Relativa.Core.Application.Tests;

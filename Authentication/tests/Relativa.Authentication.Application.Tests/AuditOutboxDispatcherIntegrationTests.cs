@@ -1,14 +1,19 @@
 using DotNet.Testcontainers.Builders;
+
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
 using Relativa.Authentication.Infrastructure.Data;
 using Relativa.Authentication.Infrastructure.Services.Audit;
 using Relativa.Messaging;
 using Relativa.Persistence.Contracts;
+
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
+
 using Xunit;
 
 namespace Relativa.Authentication.Application.Tests;
@@ -74,7 +79,11 @@ public sealed class AuditOutboxDispatcherIntegrationTests : IAsyncLifetime
         var deadline = DateTimeOffset.UtcNow.AddSeconds(timeoutSeconds);
         while (DateTimeOffset.UtcNow < deadline)
         {
-            if (await condition()) return true;
+            if (await condition())
+            {
+                return true;
+            }
+
             await Task.Delay(300);
         }
         return false;

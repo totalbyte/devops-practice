@@ -1,12 +1,16 @@
-# top-most EditorConfig file
+# Repo-wide EditorConfig for the .NET services (Client/ and ML/ keep their own root files).
+# `dotnet format --verify-no-changes` in CI enforces everything below with severity >= warning.
+# Line endings are normalised by .gitattributes (`* text=auto`), so end_of_line is not set here.
 root = true
 
-# All files
 [*]
 charset = utf-8
-end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
+
+[*.{csproj,props,targets,json,yml,yaml}]
+indent_style = space
+indent_size = 2
 
 # C# files
 [*.cs]
@@ -47,6 +51,8 @@ csharp_style_expression_bodied_constructors = false:suggestion
 csharp_style_expression_bodied_properties = true:suggestion
 
 #### Naming conventions ####
+# Roslyn picks the most specific matching rule, so const/static readonly fields
+# are checked by their own rules instead of the private-field one.
 
 # Interfaces: IMyService
 dotnet_naming_rule.interfaces_should_start_with_i.severity = warning
@@ -56,6 +62,22 @@ dotnet_naming_rule.interfaces_should_start_with_i.style = prefix_i
 dotnet_naming_symbols.interfaces.applicable_kinds = interface
 dotnet_naming_style.prefix_i.required_prefix = I
 dotnet_naming_style.prefix_i.capitalization = pascal_case
+
+# Constants: PascalCase
+dotnet_naming_rule.constants_should_be_pascal_case.severity = warning
+dotnet_naming_rule.constants_should_be_pascal_case.symbols = constants
+dotnet_naming_rule.constants_should_be_pascal_case.style = pascal_case_style
+
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.required_modifiers = const
+
+# Static readonly fields: PascalCase
+dotnet_naming_rule.static_readonly_fields_should_be_pascal_case.severity = warning
+dotnet_naming_rule.static_readonly_fields_should_be_pascal_case.symbols = static_readonly_fields
+dotnet_naming_rule.static_readonly_fields_should_be_pascal_case.style = pascal_case_style
+
+dotnet_naming_symbols.static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.static_readonly_fields.required_modifiers = static, readonly
 
 # Private fields: _camelCase
 dotnet_naming_rule.private_fields_should_be_camel_case.severity = warning
@@ -68,22 +90,14 @@ dotnet_naming_symbols.private_fields.applicable_accessibilities = private
 dotnet_naming_style.camel_case_with_underscore.required_prefix = _
 dotnet_naming_style.camel_case_with_underscore.capitalization = camel_case
 
-# Constants: ALL_CAPS
-dotnet_naming_rule.constants_should_be_upper_case.severity = suggestion
-dotnet_naming_rule.constants_should_be_upper_case.symbols = constants
-dotnet_naming_rule.constants_should_be_upper_case.style = upper_case_style
-
-dotnet_naming_symbols.constants.applicable_kinds = field
-dotnet_naming_symbols.constants.required_modifiers = const
-
-dotnet_naming_style.upper_case_style.capitalization = all_upper
-
-# Public members: PascalCase
+# Types and public members: PascalCase (parameters and locals stay camelCase)
 dotnet_naming_rule.public_members_should_be_pascal_case.severity = warning
 dotnet_naming_rule.public_members_should_be_pascal_case.symbols = public_members
 dotnet_naming_rule.public_members_should_be_pascal_case.style = pascal_case_style
 
+dotnet_naming_symbols.public_members.applicable_kinds = namespace, class, struct, enum, delegate, property, method, field, event
 dotnet_naming_symbols.public_members.applicable_accessibilities = public
+
 dotnet_naming_style.pascal_case_style.capitalization = pascal_case
 
 #### Code quality ####
@@ -101,21 +115,9 @@ dotnet_style_null_propagation = true:suggestion
 # Prefer pattern matching
 csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
 
-# Async suffix
-dotnet_diagnostic.VSTHRD200.severity = warning
-
 #### Documentation ####
 dotnet_diagnostic.CS1591.severity = none
 
-#### ASP.NET specifics (optional stricter rules) ####
-
-# Require async methods naming
-dotnet_naming_rule.async_methods_should_end_with_async.severity = suggestion
-dotnet_naming_rule.async_methods_should_end_with_async.symbols = async_methods
-dotnet_naming_rule.async_methods_should_end_with_async.style = end_with_async
-
-dotnet_naming_symbols.async_methods.applicable_kinds = method
-dotnet_naming_symbols.async_methods.required_modifiers = async
-
-dotnet_naming_style.end_with_async.required_suffix = Async
-dotnet_naming_style.end_with_async.capitalization = pascal_case
+# EF Core migrations are generated code: skip style and formatting checks.
+[**/Migrations/*.cs]
+generated_code = true

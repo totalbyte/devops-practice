@@ -1,5 +1,4 @@
 using Relativa.Core.Application.DTOs.OrgRole;
-using Relativa.Core.Application.DTOs.Role;
 
 namespace Relativa.Core.Application.Interfaces;
 

@@ -1,14 +1,19 @@
 using FluentAssertions;
+
 using FluentValidation;
 using FluentValidation.Results;
+
 using Microsoft.Extensions.Configuration;
+
 using Moq;
+
 using Relativa.Authentication.Application.DTOs;
 using Relativa.Authentication.Application.Exceptions;
 using Relativa.Authentication.Application.Interfaces;
 using Relativa.Authentication.Application.Services;
 using Relativa.Authentication.Domain.Interfaces;
 using Relativa.Persistence.Entities;
+
 using Xunit;
 
 namespace Relativa.Authentication.Application.Tests;

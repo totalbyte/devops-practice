@@ -1,19 +1,25 @@
 using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
-using DotNet.Testcontainers.Builders;
+
 using FluentAssertions;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
 using Moq;
+
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+
 using Relativa.Core.Application.DTOs.Entity;
 using Relativa.Core.Application.Exceptions;
 using Relativa.Core.Application.Interfaces;
 using Relativa.Core.Infrastructure.Messaging;
 using Relativa.Persistence.Contracts;
+
 using Testcontainers.RabbitMq;
+
 using Xunit;
 
 namespace Relativa.Core.Integration.Tests;
@@ -54,7 +60,10 @@ public sealed class EntityGraphCommandConsumerTests : IAsyncLifetime
         {
             var correlationId = ea.BasicProperties.CorrelationId ?? "";
             if (_replies.TryGetValue(correlationId, out var tcs))
+            {
                 tcs.TrySetResult(Encoding.UTF8.GetString(ea.Body.ToArray()));
+            }
+
             return Task.CompletedTask;
         };
         await _channel.BasicConsumeAsync(ReplyQueue, autoAck: true, consumer: replyConsumer);

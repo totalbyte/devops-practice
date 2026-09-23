@@ -1,11 +1,14 @@
 using FluentAssertions;
+
 using Moq;
+
 using Relativa.Core.Application.Authorization;
 using Relativa.Core.Application.DTOs.Member;
 using Relativa.Core.Application.Services;
 using Relativa.Core.Domain.Interfaces;
 using Relativa.Persistence.Contracts;
 using Relativa.Persistence.Entities;
+
 using Xunit;
 
 namespace Relativa.Core.Application.Tests;

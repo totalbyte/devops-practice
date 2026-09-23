@@ -1,12 +1,18 @@
 using DotNet.Testcontainers.Builders;
+
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
+
 using NSubstitute;
+
 using Relativa.Graph.Dashboard;
 using Relativa.Graph.Data;
 using Relativa.Graph.ML;
 using Relativa.Persistence.Entities;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Graph.Integration.Tests;
@@ -67,23 +73,23 @@ public sealed class DashboardServicePermissionTests : IAsyncLifetime
         await _db.SaveChangesAsync();
         _organizationId = org.Id;
 
-        var orgAdmin     = new User { FirstName = "Olha",  LastName = "Owner",   Email = "owner@test.com",    Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
-        var analyticsU   = new User { FirstName = "Ana",   LastName = "Analyst", Email = "analyst@test.com",  Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
-        var basicU       = new User { FirstName = "Borys", LastName = "Basic",   Email = "basic@test.com",    Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
-        var outsider     = new User { FirstName = "Ostap", LastName = "Outside", Email = "outsider@test.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
-        var archivedAdmin = new User { FirstName = "Fedir", LastName = "Former",  Email = "former@test.com",   Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
+        var orgAdmin = new User { FirstName = "Olha", LastName = "Owner", Email = "owner@test.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
+        var analyticsU = new User { FirstName = "Ana", LastName = "Analyst", Email = "analyst@test.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
+        var basicU = new User { FirstName = "Borys", LastName = "Basic", Email = "basic@test.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
+        var outsider = new User { FirstName = "Ostap", LastName = "Outside", Email = "outsider@test.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
+        var archivedAdmin = new User { FirstName = "Fedir", LastName = "Former", Email = "former@test.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
         _db.Users.AddRange(orgAdmin, analyticsU, basicU, outsider, archivedAdmin);
         await _db.SaveChangesAsync();
 
-        _orgAdminUserId      = orgAdmin.Id;
-        _analyticsUserId     = analyticsU.Id;
-        _basicUserId         = basicU.Id;
-        _outsiderUserId      = outsider.Id;
+        _orgAdminUserId = orgAdmin.Id;
+        _analyticsUserId = analyticsU.Id;
+        _basicUserId = basicU.Id;
+        _outsiderUserId = outsider.Id;
         _archivedAdminUserId = archivedAdmin.Id;
 
-        var permManageOrg     = new Permission { Name = "manage_org_settings", IsArchived = false };
-        var permViewAnalytics = new Permission { Name = "view_analytics",      IsArchived = false };
-        var permViewBasic     = new Permission { Name = "view_basic_stats",    IsArchived = false };
+        var permManageOrg = new Permission { Name = "manage_org_settings", IsArchived = false };
+        var permViewAnalytics = new Permission { Name = "view_analytics", IsArchived = false };
+        var permViewBasic = new Permission { Name = "view_basic_stats", IsArchived = false };
         _db.Permissions.AddRange(permManageOrg, permViewAnalytics, permViewBasic);
         await _db.SaveChangesAsync();
 
@@ -96,19 +102,19 @@ public sealed class DashboardServicePermissionTests : IAsyncLifetime
         await _db.SaveChangesAsync();
 
         _db.UserRoleOrganizations.AddRange(
-            new UserRoleOrganization { UserId = orgAdmin.Id,      OrganizationId = org.Id, OrgRoleId = orgAdminRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = false },
+            new UserRoleOrganization { UserId = orgAdmin.Id, OrganizationId = org.Id, OrgRoleId = orgAdminRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = false },
             new UserRoleOrganization { UserId = archivedAdmin.Id, OrganizationId = org.Id, OrgRoleId = orgAdminRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = true });
         await _db.SaveChangesAsync();
 
         var wsAnalystRole = new WorkspaceRole { Name = "ws_analyst", WorkspaceId = null, Priority = 3, IsArchived = false };
-        var wsViewerRole  = new WorkspaceRole { Name = "ws_viewer",  WorkspaceId = null, Priority = 4, IsArchived = false };
+        var wsViewerRole = new WorkspaceRole { Name = "ws_viewer", WorkspaceId = null, Priority = 4, IsArchived = false };
         _db.WorkspaceRoles.AddRange(wsAnalystRole, wsViewerRole);
         await _db.SaveChangesAsync();
 
         _db.WorkspaceRolePermissions.AddRange(
             new WorkspaceRolePermission { WsRoleId = wsAnalystRole.Id, PermissionId = permViewAnalytics.Id },
             new WorkspaceRolePermission { WsRoleId = wsAnalystRole.Id, PermissionId = permViewBasic.Id },
-            new WorkspaceRolePermission { WsRoleId = wsViewerRole.Id,  PermissionId = permViewBasic.Id });
+            new WorkspaceRolePermission { WsRoleId = wsViewerRole.Id, PermissionId = permViewBasic.Id });
         await _db.SaveChangesAsync();
 
         var ws = new Workspace { Name = "WS One", IsArchived = false, CreatedByUserId = orgAdmin.Id, OrganizationId = org.Id };
@@ -117,7 +123,7 @@ public sealed class DashboardServicePermissionTests : IAsyncLifetime
 
         _db.UserRoleWorkspaces.AddRange(
             new UserRoleWorkspace { UserId = analyticsU.Id, WorkspaceId = ws.Id, WsRoleId = wsAnalystRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = false },
-            new UserRoleWorkspace { UserId = basicU.Id,     WorkspaceId = ws.Id, WsRoleId = wsViewerRole.Id,  JoinedAt = DateTime.UtcNow, IsArchived = false });
+            new UserRoleWorkspace { UserId = basicU.Id, WorkspaceId = ws.Id, WsRoleId = wsViewerRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = false });
         await _db.SaveChangesAsync();
     }
 

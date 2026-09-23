@@ -25,8 +25,10 @@ public static class GraphQueryEndpoints
                 }
 
                 if (riskLevel is not null && !ValidRiskLevels.Contains(riskLevel))
+                {
                     return Results.BadRequest(
                         $"Invalid risk_level '{riskLevel}'. Allowed values: high, medium, low.");
+                }
 
                 var result = await svc.BuildGraphAsync(userId, organizationId, riskLevel, ct);
                 return Results.Ok(result);
@@ -40,7 +42,10 @@ public static class GraphQueryEndpoints
     {
         var v = ctx.Request.Headers["X-User-Id"].ToString();
         if (string.IsNullOrEmpty(v) || !int.TryParse(v, out var id))
+        {
             throw new UnauthorizedAccessException("Missing or invalid X-User-Id header.");
+        }
+
         return id;
     }
 }

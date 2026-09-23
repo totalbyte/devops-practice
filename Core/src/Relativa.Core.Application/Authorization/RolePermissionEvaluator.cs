@@ -13,7 +13,9 @@ public static class RolePermissionEvaluator
     public static bool HasAllPermissions(WorkspaceRole? role, IReadOnlyCollection<string> requiredPermissions)
     {
         if (role?.RolePermissions is null || requiredPermissions.Count == 0)
+        {
             return false;
+        }
 
         var rolePermissions = role.RolePermissions
             .Select(rp => rp.Permission?.Name)
@@ -27,7 +29,9 @@ public static class RolePermissionEvaluator
     public static bool HasAllPermissions(OrganizationRole? role, IReadOnlyCollection<string> requiredPermissions)
     {
         if (role?.RolePermissions is null || requiredPermissions.Count == 0)
+        {
             return false;
+        }
 
         var rolePermissions = role.RolePermissions
             .Select(rp => rp.Permission?.Name)

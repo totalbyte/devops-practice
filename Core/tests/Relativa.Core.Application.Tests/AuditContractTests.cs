@@ -1,5 +1,7 @@
 using FluentAssertions;
+
 using Relativa.Persistence.Contracts;
+
 using Xunit;
 
 namespace Relativa.Core.Application.Tests;

@@ -1,10 +1,15 @@
 using DotNet.Testcontainers.Builders;
+
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Core.Infrastructure.Data;
 using Relativa.Core.Infrastructure.Repositories;
 using Relativa.Persistence.Entities;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Core.Integration.Tests;
@@ -49,7 +54,7 @@ public sealed class InvitationAndJoinRequestTests : IAsyncLifetime
         _orgId = org.Id;
 
         var u1 = new User { Email = "inviter@test.com", FirstName = "A", LastName = "B", Password = "x" };
-        var u2 = new User { Email = "joiner@test.com",  FirstName = "C", LastName = "D", Password = "x" };
+        var u2 = new User { Email = "joiner@test.com", FirstName = "C", LastName = "D", Password = "x" };
         db.Users.AddRange(u1, u2);
         await db.SaveChangesAsync();
         _userId1 = u1.Id;
@@ -62,7 +67,7 @@ public sealed class InvitationAndJoinRequestTests : IAsyncLifetime
     }
 
     private OrgInvitationRepository InvRepo() => new(Db());
-    private JoinRequestRepository JrRepo()    => new(Db());
+    private JoinRequestRepository JrRepo() => new(Db());
 
 
     [Fact]
@@ -70,9 +75,14 @@ public sealed class InvitationAndJoinRequestTests : IAsyncLifetime
     {
         var inv = new OrganizationInvitation
         {
-            OrganizationId = _orgId, Email = "a@b.com", OrgRoleId = _orgRoleId,
-            InvitedByUserId = _userId1, Token = Guid.NewGuid().ToString(),
-            Status = "Pending", CreatedAt = DateTime.UtcNow, ExpiresAt = DateTime.UtcNow.AddDays(7)
+            OrganizationId = _orgId,
+            Email = "a@b.com",
+            OrgRoleId = _orgRoleId,
+            InvitedByUserId = _userId1,
+            Token = Guid.NewGuid().ToString(),
+            Status = "Pending",
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
         };
         await using (var db = Db()) { db.OrganizationInvitations.Add(inv); await db.SaveChangesAsync(); }
 
@@ -89,9 +99,14 @@ public sealed class InvitationAndJoinRequestTests : IAsyncLifetime
         var token = Guid.NewGuid().ToString();
         var inv = new OrganizationInvitation
         {
-            OrganizationId = _orgId, Email = "token@b.com", OrgRoleId = _orgRoleId,
-            InvitedByUserId = _userId1, Token = token,
-            Status = "Pending", CreatedAt = DateTime.UtcNow, ExpiresAt = DateTime.UtcNow.AddDays(7)
+            OrganizationId = _orgId,
+            Email = "token@b.com",
+            OrgRoleId = _orgRoleId,
+            InvitedByUserId = _userId1,
+            Token = token,
+            Status = "Pending",
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
         };
         await using (var db = Db()) { db.OrganizationInvitations.Add(inv); await db.SaveChangesAsync(); }
 
@@ -112,17 +127,27 @@ public sealed class InvitationAndJoinRequestTests : IAsyncLifetime
     public async Task OrgInvitation_GetByEmail_NormalizesAndFiltersNonPending()
     {
         var email = $"mixed.{Guid.NewGuid():N}@org.com";
-        var invPending  = new OrganizationInvitation
+        var invPending = new OrganizationInvitation
         {
-            OrganizationId = _orgId, Email = email, OrgRoleId = _orgRoleId,
-            InvitedByUserId = _userId1, Token = Guid.NewGuid().ToString(),
-            Status = "Pending", CreatedAt = DateTime.UtcNow, ExpiresAt = DateTime.UtcNow.AddDays(7)
+            OrganizationId = _orgId,
+            Email = email,
+            OrgRoleId = _orgRoleId,
+            InvitedByUserId = _userId1,
+            Token = Guid.NewGuid().ToString(),
+            Status = "Pending",
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
         };
         var invAccepted = new OrganizationInvitation
         {
-            OrganizationId = _orgId, Email = email, OrgRoleId = _orgRoleId,
-            InvitedByUserId = _userId1, Token = Guid.NewGuid().ToString(),
-            Status = "Accepted", CreatedAt = DateTime.UtcNow, ExpiresAt = DateTime.UtcNow.AddDays(7)
+            OrganizationId = _orgId,
+            Email = email,
+            OrgRoleId = _orgRoleId,
+            InvitedByUserId = _userId1,
+            Token = Guid.NewGuid().ToString(),
+            Status = "Accepted",
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
         };
         await using (var db = Db())
         {
@@ -149,9 +174,14 @@ public sealed class InvitationAndJoinRequestTests : IAsyncLifetime
         var email = $"pending.{Guid.NewGuid():N}@org.com";
         var inv = new OrganizationInvitation
         {
-            OrganizationId = _orgId, Email = email, OrgRoleId = _orgRoleId,
-            InvitedByUserId = _userId1, Token = Guid.NewGuid().ToString(),
-            Status = "Pending", CreatedAt = DateTime.UtcNow, ExpiresAt = DateTime.UtcNow.AddDays(7)
+            OrganizationId = _orgId,
+            Email = email,
+            OrgRoleId = _orgRoleId,
+            InvitedByUserId = _userId1,
+            Token = Guid.NewGuid().ToString(),
+            Status = "Pending",
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
         };
         await using (var db = Db()) { db.OrganizationInvitations.Add(inv); await db.SaveChangesAsync(); }
 
@@ -165,9 +195,14 @@ public sealed class InvitationAndJoinRequestTests : IAsyncLifetime
     {
         var inv = new OrganizationInvitation
         {
-            OrganizationId = _orgId, Email = "new@inv.com", OrgRoleId = _orgRoleId,
-            InvitedByUserId = _userId1, Token = Guid.NewGuid().ToString(),
-            Status = "Pending", CreatedAt = DateTime.UtcNow, ExpiresAt = DateTime.UtcNow.AddDays(7)
+            OrganizationId = _orgId,
+            Email = "new@inv.com",
+            OrgRoleId = _orgRoleId,
+            InvitedByUserId = _userId1,
+            Token = Guid.NewGuid().ToString(),
+            Status = "Pending",
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
         };
 
         await InvRepo().AddAsync(inv);
@@ -181,9 +216,14 @@ public sealed class InvitationAndJoinRequestTests : IAsyncLifetime
     {
         var inv = new OrganizationInvitation
         {
-            OrganizationId = _orgId, Email = "update@inv.com", OrgRoleId = _orgRoleId,
-            InvitedByUserId = _userId1, Token = Guid.NewGuid().ToString(),
-            Status = "Pending", CreatedAt = DateTime.UtcNow, ExpiresAt = DateTime.UtcNow.AddDays(7)
+            OrganizationId = _orgId,
+            Email = "update@inv.com",
+            OrgRoleId = _orgRoleId,
+            InvitedByUserId = _userId1,
+            Token = Guid.NewGuid().ToString(),
+            Status = "Pending",
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
         };
         await using (var db = Db()) { db.OrganizationInvitations.Add(inv); await db.SaveChangesAsync(); }
 
@@ -204,11 +244,17 @@ public sealed class InvitationAndJoinRequestTests : IAsyncLifetime
     {
         var jr1 = new OrganizationJoinRequest
         {
-            UserId = _userId1, OrganizationId = _orgId, Status = "Pending", CreatedAt = DateTime.UtcNow
+            UserId = _userId1,
+            OrganizationId = _orgId,
+            Status = "Pending",
+            CreatedAt = DateTime.UtcNow
         };
         var jr2 = new OrganizationJoinRequest
         {
-            UserId = _userId2, OrganizationId = _orgId, Status = "Approved", CreatedAt = DateTime.UtcNow
+            UserId = _userId2,
+            OrganizationId = _orgId,
+            Status = "Approved",
+            CreatedAt = DateTime.UtcNow
         };
         await using (var db = Db()) { db.OrganizationJoinRequests.AddRange(jr1, jr2); await db.SaveChangesAsync(); }
 
@@ -223,11 +269,17 @@ public sealed class InvitationAndJoinRequestTests : IAsyncLifetime
         var uid = _userId1;
         var jr1 = new OrganizationJoinRequest
         {
-            UserId = uid, OrganizationId = _orgId, Status = "Pending", CreatedAt = DateTime.UtcNow
+            UserId = uid,
+            OrganizationId = _orgId,
+            Status = "Pending",
+            CreatedAt = DateTime.UtcNow
         };
         var jr2 = new OrganizationJoinRequest
         {
-            UserId = uid, OrganizationId = _orgId, Status = "Rejected", CreatedAt = DateTime.UtcNow
+            UserId = uid,
+            OrganizationId = _orgId,
+            Status = "Rejected",
+            CreatedAt = DateTime.UtcNow
         };
         await using (var db = Db()) { db.OrganizationJoinRequests.AddRange(jr1, jr2); await db.SaveChangesAsync(); }
 
@@ -242,7 +294,10 @@ public sealed class InvitationAndJoinRequestTests : IAsyncLifetime
     {
         var jr = new OrganizationJoinRequest
         {
-            UserId = _userId1, OrganizationId = _orgId, Status = "Pending", CreatedAt = DateTime.UtcNow
+            UserId = _userId1,
+            OrganizationId = _orgId,
+            Status = "Pending",
+            CreatedAt = DateTime.UtcNow
         };
         await using (var db = Db()) { db.OrganizationJoinRequests.Add(jr); await db.SaveChangesAsync(); }
 
@@ -264,7 +319,10 @@ public sealed class InvitationAndJoinRequestTests : IAsyncLifetime
     {
         var jr = new OrganizationJoinRequest
         {
-            UserId = _userId2, OrganizationId = _orgId, Status = "Pending", CreatedAt = DateTime.UtcNow
+            UserId = _userId2,
+            OrganizationId = _orgId,
+            Status = "Pending",
+            CreatedAt = DateTime.UtcNow
         };
 
         await JrRepo().AddAsync(jr);
@@ -278,7 +336,10 @@ public sealed class InvitationAndJoinRequestTests : IAsyncLifetime
     {
         var jr = new OrganizationJoinRequest
         {
-            UserId = _userId2, OrganizationId = _orgId, Status = "Pending", CreatedAt = DateTime.UtcNow
+            UserId = _userId2,
+            OrganizationId = _orgId,
+            Status = "Pending",
+            CreatedAt = DateTime.UtcNow
         };
         await using (var db = Db()) { db.OrganizationJoinRequests.Add(jr); await db.SaveChangesAsync(); }
 

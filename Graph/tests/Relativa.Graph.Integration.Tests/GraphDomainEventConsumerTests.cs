@@ -1,19 +1,27 @@
 using System.Text;
 using System.Text.Json;
+
 using DotNet.Testcontainers.Builders;
+
 using FluentAssertions;
+
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+
 using NSubstitute;
+
 using RabbitMQ.Client;
+
 using Relativa.Graph.Data;
 using Relativa.Graph.Hubs;
 using Relativa.Graph.Messaging;
 using Relativa.Persistence.Contracts;
+
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
+
 using Xunit;
 
 namespace Relativa.Graph.Integration.Tests;
@@ -130,7 +138,10 @@ public sealed class GraphDomainEventConsumerTests : IAsyncLifetime
             await using var db = new GraphDbContext(_dbOptions);
             if (await db.RabbitMqProcessedDeliveries.AsNoTracking()
                     .AnyAsync(d => d.MessageId == messageId && d.ConsumerGroup == ConsumerGroup))
+            {
                 return true;
+            }
+
             await Task.Delay(300);
         }
         return false;

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Graph.Dashboard.Dto;
 using Relativa.Graph.Data;
 using Relativa.Graph.ML;
@@ -7,8 +8,8 @@ namespace Relativa.Graph.Dashboard;
 
 public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient mlClient) : IDashboardService
 {
-    private const string ViewAnalytics    = "view_analytics";
-    private const string ViewBasicStats   = "view_basic_stats";
+    private const string ViewAnalytics = "view_analytics";
+    private const string ViewBasicStats = "view_basic_stats";
     private const string ManageOrgSettings = "manage_org_settings";
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -61,7 +62,9 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
             .ToListAsync(ct);
 
         if (analyticsWsIds.Count > 0)
+        {
             return (analyticsWsIds, "full");
+        }
 
         // view_basic_stats in any workspace of this org
         var basicWsIds = await db.UserRoleWorkspaces
@@ -76,7 +79,9 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
             .ToListAsync(ct);
 
         if (basicWsIds.Count > 0)
+        {
             return (basicWsIds, "basic");
+        }
 
         throw new ForbiddenAccessException(
             "User does not have any dashboard access permissions in this organization.");
@@ -113,8 +118,10 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
             .ToListAsync(ct);
 
         if (wsIds.Count == 0)
+        {
             throw new ForbiddenAccessException(
                 "User does not have view_analytics permission in any workspace.");
+        }
 
         return wsIds;
     }
@@ -139,7 +146,9 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
         List<int> entityIds, IEnumerable<string> propertyNames, CancellationToken ct)
     {
         if (entityIds.Count == 0)
+        {
             return new Dictionary<int, Dictionary<string, string?>>();
+        }
 
         var propSet = propertyNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
@@ -181,7 +190,9 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
         List<int> entityIds, string propertyName, CancellationToken ct)
     {
         if (entityIds.Count == 0)
+        {
             return new Dictionary<int, decimal?>();
+        }
 
         return await db.EntityPropertyValues
             .Where(epv => entityIds.Contains(epv.EntityId)
@@ -198,12 +209,12 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
         int userId, int organizationId, CancellationToken ct)
     {
         var (wsIds, accessLevel) = await GetAccessContextAsync(userId, organizationId, ct);
-        var totalWorkspaces  = wsIds.Count;
+        var totalWorkspaces = wsIds.Count;
         var activeWorkspaces = totalWorkspaces;
 
         if (accessLevel == "basic")
         {
-            var basicDealIds   = await GetEntityIdsByTypeAsync(wsIds, "deal",   ct);
+            var basicDealIds = await GetEntityIdsByTypeAsync(wsIds, "deal", ct);
             var basicClientIds = await GetEntityIdsByTypeAsync(wsIds, "client", ct);
             return new DashboardSummaryDto(
                 basicDealIds.Count, 0, 0, 0, 0, 0, 0,
@@ -211,15 +222,15 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
                 totalWorkspaces, activeWorkspaces, "basic");
         }
 
-        var dealIds   = await GetEntityIdsByTypeAsync(wsIds, "deal",   ct);
+        var dealIds = await GetEntityIdsByTypeAsync(wsIds, "deal", ct);
         var clientIds = await GetEntityIdsByTypeAsync(wsIds, "client", ct);
-        var taskIds   = await GetEntityIdsByTypeAsync(wsIds, "task",   ct);
+        var taskIds = await GetEntityIdsByTypeAsync(wsIds, "task", ct);
 
-        var dealProps   = await GetPropertyValuesAsync(dealIds,   ["status", "deal_value", "expected_close"], ct);
-        var clientProps = await GetPropertyValuesAsync(clientIds, ["client_status"],                          ct);
-        var taskProps   = await GetPropertyValuesAsync(taskIds,   ["task_status", "due_date"],                ct);
+        var dealProps = await GetPropertyValuesAsync(dealIds, ["status", "deal_value", "expected_close"], ct);
+        var clientProps = await GetPropertyValuesAsync(clientIds, ["client_status"], ct);
+        var taskProps = await GetPropertyValuesAsync(taskIds, ["task_status", "due_date"], ct);
 
-        var today          = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var thisMonthStart = new DateOnly(today.Year, today.Month, 1);
         var nextMonthStart = thisMonthStart.AddMonths(1);
 
@@ -229,22 +240,24 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
 
         foreach (var id in dealIds)
         {
-            var p      = dealProps.GetValueOrDefault(id);
+            var p = dealProps.GetValueOrDefault(id);
             var status = p?.GetValueOrDefault("status") ?? "";
-            var value  = decimal.TryParse(p?.GetValueOrDefault("deal_value"), out var dv) ? dv : 0m;
+            var value = decimal.TryParse(p?.GetValueOrDefault("deal_value"), out var dv) ? dv : 0m;
             totalDealValue += value;
 
             switch (status.ToLowerInvariant())
             {
-                case "closed":  wonDeals++;  break;
+                case "closed": wonDeals++; break;
                 case "revoked": lostDeals++; break;
-                default:        openDeals++; break;
+                default: openDeals++; break;
             }
 
             var rawClose = p?.GetValueOrDefault("expected_close");
             if (rawClose is not null && DateOnly.TryParse(rawClose, out var closeDate)
                 && closeDate >= thisMonthStart && closeDate < nextMonthStart)
+            {
                 dealsClosingThisMonth++;
+            }
         }
 
         int totalClients = clientIds.Count, activeClients = 0;
@@ -252,23 +265,31 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
         {
             if (string.Equals(clientProps.GetValueOrDefault(id)?.GetValueOrDefault("client_status"),
                 "active", StringComparison.OrdinalIgnoreCase))
+            {
                 activeClients++;
+            }
         }
 
         int tasksOverdue = 0;
         foreach (var id in taskIds)
         {
-            var p          = taskProps.GetValueOrDefault(id);
+            var p = taskProps.GetValueOrDefault(id);
             var taskStatus = p?.GetValueOrDefault("task_status") ?? "";
-            if (string.Equals(taskStatus, "done", StringComparison.OrdinalIgnoreCase)) continue;
+            if (string.Equals(taskStatus, "done", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
             var rawDue = p?.GetValueOrDefault("due_date");
             if (rawDue is not null && DateOnly.TryParse(rawDue, out var due) && due < today)
+            {
                 tasksOverdue++;
+            }
         }
 
         var closedOrLost = wonDeals + lostDeals;
-        var winRate      = closedOrLost > 0 ? (double)wonDeals / closedOrLost : 0.0;
-        var avgDealSize  = totalDeals > 0 ? totalDealValue / totalDeals : 0m;
+        var winRate = closedOrLost > 0 ? (double)wonDeals / closedOrLost : 0.0;
+        var avgDealSize = totalDeals > 0 ? totalDealValue / totalDeals : 0m;
 
         return new DashboardSummaryDto(
             totalDeals, openDeals, totalDealValue,
@@ -294,11 +315,17 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
 
         var stageOrder = new[] { "Prospecting", "Qualification", "Proposal", "Negotiation" };
         var stageGroups = new Dictionary<string, (int count, decimal value)>(StringComparer.OrdinalIgnoreCase);
-        foreach (var s in stageOrder) stageGroups[s] = (0, 0);
+        foreach (var s in stageOrder)
+        {
+            stageGroups[s] = (0, 0);
+        }
 
         var statusBreakdown = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
         {
-            ["opened"] = 0, ["pending"] = 0, ["closed"] = 0, ["revoked"] = 0
+            ["opened"] = 0,
+            ["pending"] = 0,
+            ["closed"] = 0,
+            ["revoked"] = 0
         };
 
         int wonDeals = 0, lostDeals = 0;
@@ -312,16 +339,29 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
             var value = decimal.TryParse(rawValue, out var dv) ? dv : 0m;
 
             if (!string.IsNullOrEmpty(stage) && stageGroups.TryGetValue(stage, out var sg))
+            {
                 stageGroups[stage] = (sg.count + 1, sg.value + value);
+            }
 
             var statusKey = status.ToLowerInvariant();
             if (statusBreakdown.ContainsKey(statusKey))
+            {
                 statusBreakdown[statusKey]++;
+            }
             else
+            {
                 statusBreakdown["opened"]++;
+            }
 
-            if (statusKey == "closed") wonDeals++;
-            if (statusKey == "revoked") lostDeals++;
+            if (statusKey == "closed")
+            {
+                wonDeals++;
+            }
+
+            if (statusKey == "revoked")
+            {
+                lostDeals++;
+            }
         }
 
         var totalCount = dealIds.Count;
@@ -403,7 +443,9 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
         foreach (var id in activeDealIds)
         {
             if (!mlScores.TryGetValue(id, out var score) || score.ClosureScore is null)
+            {
                 continue;
+            }
 
             var p = dealProps.GetValueOrDefault(id);
             var title = p?.GetValueOrDefault("title") ?? $"Deal #{id}";
@@ -428,9 +470,9 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
 
             switch (bucket)
             {
-                case "high":   high.Add((id, value)); break;
+                case "high": high.Add((id, value)); break;
                 case "medium": medium.Add((id, value)); break;
-                case "low":    low.Add((id, value)); break;
+                case "low": low.Add((id, value)); break;
             }
         }
 
@@ -444,9 +486,9 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
 
         var distribution = new Dictionary<string, RiskBucketDto>
         {
-            ["high"]   = MakeBucket(high),
+            ["high"] = MakeBucket(high),
             ["medium"] = MakeBucket(medium),
-            ["low"]    = MakeBucket(low),
+            ["low"] = MakeBucket(low),
         };
 
         return new RiskDistributionDto(distribution,
@@ -473,14 +515,14 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
             .ToList();
 
         // Mutable state per month — all grouped by expected_close month
-        var newDealsCounts  = months.ToDictionary(m => m, _ => 0);
+        var newDealsCounts = months.ToDictionary(m => m, _ => 0);
         var closedWonCounts = months.ToDictionary(m => m, _ => 0);
         var closedLostCounts = months.ToDictionary(m => m, _ => 0);
-        var wonRevenues     = months.ToDictionary(m => m, _ => 0m);
-        var activeValues    = months.ToDictionary(m => m, _ => 0m);
+        var wonRevenues = months.ToDictionary(m => m, _ => 0m);
+        var activeValues = months.ToDictionary(m => m, _ => 0m);
 
         var windowStart = months[0];
-        var windowEnd   = months[^1].AddMonths(1);
+        var windowEnd = months[^1].AddMonths(1);
 
         foreach (var id in dealIds)
         {
@@ -492,11 +534,15 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
             // All metrics grouped by expected_close month
             var rawClose = p?.GetValueOrDefault("expected_close");
             if (rawClose is null || !DateOnly.TryParse(rawClose, out var closeDate))
+            {
                 continue;
+            }
 
             var closeMonth = new DateOnly(closeDate.Year, closeDate.Month, 1);
             if (closeMonth < windowStart || closeMonth >= windowEnd)
+            {
                 continue;
+            }
 
             // Every deal with an expected_close in this window is a "pipeline deal" for that month
             newDealsCounts[closeMonth]++;
@@ -617,7 +663,11 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
             var closed = deals
                 .Where(did => (dealProps.GetValueOrDefault(did)?.GetValueOrDefault("status") ?? "") == "closed")
                 .Sum(DealValue);
-            if (closed > 0) return (closed, false);
+            if (closed > 0)
+            {
+                return (closed, false);
+            }
+
             var expected = deals
                 .Where(did => (dealProps.GetValueOrDefault(did)?.GetValueOrDefault("status") ?? "") is "opened" or "pending")
                 .Sum(DealValue);
@@ -632,7 +682,7 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
             .Take(10)
             .ToList();
 
-        var top10ClientIds   = clientLtvs.Select(x => x.id).ToList();
+        var top10ClientIds = clientLtvs.Select(x => x.id).ToList();
         var allLinkedDealIds = top10ClientIds.SelectMany(id => allClientDealMap.GetValueOrDefault(id, [])).Distinct().ToList();
         var allMlScores = await mlClient.ScoreBatchAsync(allLinkedDealIds, ct);
 
@@ -654,7 +704,9 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
                 .Select(did => allMlScores[did].ClosureScore!.Value)
                 .ToList();
             if (scores.Count > 0)
+            {
                 avgScore = Math.Round(scores.Average(), 4);
+            }
 
             var name = p?.GetValueOrDefault("company_name")
                 ?? p?.GetValueOrDefault("name")
@@ -677,7 +729,9 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
     {
         var orgPerms = await GetOrgPermissionsAsync(userId, organizationId, ct);
         if (!orgPerms.Contains(ManageOrgSettings))
+        {
             throw new ForbiddenAccessException("Requires manage_org_settings permission.");
+        }
 
         var workspaces = await db.Workspaces
             .Where(w => w.OrganizationId == organizationId && !w.IsArchived)
@@ -685,7 +739,9 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
             .ToListAsync(ct);
 
         if (workspaces.Count == 0)
+        {
             return [];
+        }
 
         var allWorkspaceIds = workspaces.Select(w => w.Id).ToList();
 
@@ -720,7 +776,7 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
 
         foreach (var ws in workspaces)
         {
-            var dealIds   = dealsByWs.GetValueOrDefault(ws.Id) ?? [];
+            var dealIds = dealsByWs.GetValueOrDefault(ws.Id) ?? [];
             var clientIds = clientsByWs.GetValueOrDefault(ws.Id) ?? [];
             var memberCount = memberCounts.GetValueOrDefault(ws.Id, 0);
 
@@ -730,22 +786,30 @@ public sealed class DashboardService(GraphQueryDbContext db, IMlScoringClient ml
 
             foreach (var id in dealIds)
             {
-                var p      = allDealProps.GetValueOrDefault(id);
+                var p = allDealProps.GetValueOrDefault(id);
                 var status = (p?.GetValueOrDefault("status") ?? "").ToLowerInvariant();
-                var value  = decimal.TryParse(p?.GetValueOrDefault("deal_value"), out var dv) ? dv : 0m;
+                var value = decimal.TryParse(p?.GetValueOrDefault("deal_value"), out var dv) ? dv : 0m;
                 totalValue += value;
 
-                if (status == "closed")  won++;
-                else if (status == "revoked") lost++;
+                if (status == "closed")
+                {
+                    won++;
+                }
+                else if (status == "revoked")
+                {
+                    lost++;
+                }
 
                 var stage = p?.GetValueOrDefault("deal_stage") ?? "";
                 if (!string.IsNullOrEmpty(stage))
+                {
                     stageCounts[stage] = stageCounts.GetValueOrDefault(stage) + 1;
+                }
             }
 
             var closedOrLost = won + lost;
-            var winRate      = closedOrLost > 0 ? Math.Round((double)won / closedOrLost, 4) : 0.0;
-            var topStage     = stageCounts.Count > 0
+            var winRate = closedOrLost > 0 ? Math.Round((double)won / closedOrLost, 4) : 0.0;
+            var topStage = stageCounts.Count > 0
                 ? stageCounts.MaxBy(kvp => kvp.Value).Key
                 : "";
 

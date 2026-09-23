@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+
 using FluentAssertions;
+
 using Xunit;
 
 namespace Relativa.Graph.Integration.Tests;
@@ -16,7 +18,10 @@ public sealed class GraphQueryEndpointsApiTests : IClassFixture<GraphApiFactory>
     {
         var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/graph?{query}");
         if (userId is not null)
+        {
             request.Headers.Add("X-User-Id", userId.Value.ToString());
+        }
+
         return await _factory.CreateClient().SendAsync(request);
     }
 

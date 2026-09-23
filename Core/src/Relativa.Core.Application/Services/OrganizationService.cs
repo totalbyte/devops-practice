@@ -1,5 +1,7 @@
 using System.Text.Json;
+
 using FluentValidation;
+
 using Relativa.Core.Application.Authorization;
 using Relativa.Core.Application.DTOs.Organization;
 using Relativa.Core.Application.Exceptions;
@@ -236,7 +238,7 @@ public sealed class OrganizationService(
 
         if (callerMembership.Role!.Priority >= targetMember.Role!.Priority)
         {
-            throw new AppException("insufficient_role_authority", 403, 
+            throw new AppException("insufficient_role_authority", 403,
                 "You cannot perform this action on a member whose organization role has equal or higher authority than yours.");
         }
 
@@ -273,7 +275,9 @@ public sealed class OrganizationService(
             ?? throw new AppException("role_not_found", 400, "The specified role does not exist.");
 
         if (role.OrganizationId.HasValue && role.OrganizationId.Value != organizationId)
+        {
             throw new AppException("role_not_in_organization", 400, "The specified role does not belong to this organization.");
+        }
 
         targetMember.OrgRoleId = role.Id;
         await orgMemberRepository.UpdateAsync(targetMember, ct);
@@ -351,9 +355,14 @@ public sealed class OrganizationService(
         {
             var role = await orgRoleRepository.GetByIdAsync(request.DefaultOrgRoleId.Value, ct);
             if (role is null)
+            {
                 throw new AppException("default_org_role_not_found", 400, "The specified default org role does not exist.");
+            }
+
             if (role.OrganizationId.HasValue && role.OrganizationId.Value != organizationId)
+            {
                 throw new AppException("default_org_role_not_in_org", 400, "The specified default org role does not belong to this organization.");
+            }
         }
 
         var oldJson = JsonSerializer.Serialize(new
@@ -425,6 +434,8 @@ public sealed class OrganizationService(
         var hasPermission = membership.Role?.RolePermissions
             .Any(rp => rp.Permission?.Name == permission) ?? false;
         if (!hasPermission)
+        {
             throw new AppException("permission_denied", 403, $"You do not have the '{permission}' permission in this organization.");
+        }
     }
 }

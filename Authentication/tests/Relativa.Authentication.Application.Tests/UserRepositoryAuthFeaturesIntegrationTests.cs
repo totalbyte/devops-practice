@@ -1,10 +1,15 @@
 using DotNet.Testcontainers.Builders;
+
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Authentication.Infrastructure.Data;
 using Relativa.Authentication.Infrastructure.Repositories;
 using Relativa.Persistence.Entities;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Authentication.Application.Tests;

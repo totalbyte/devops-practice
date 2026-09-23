@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Persistence.Configurations;
 using Relativa.Persistence.Entities;
 

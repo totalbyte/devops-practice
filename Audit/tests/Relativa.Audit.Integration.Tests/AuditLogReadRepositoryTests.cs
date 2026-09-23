@@ -1,14 +1,20 @@
 using System.Text.Json;
+
 using DotNet.Testcontainers.Builders;
+
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Audit.Application.Exceptions;
 using Relativa.Audit.Application.Validators;
 using Relativa.Audit.Infrastructure.Data;
 using Relativa.Audit.Infrastructure.Services;
 using Relativa.Persistence.Entities;
 using Relativa.Persistence.Entities.AuditLogs;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Audit.Integration.Tests;
@@ -232,7 +238,7 @@ public sealed class AuditLogReadRepositoryTests : IAsyncLifetime
     public async Task GetEntityScopeAsync_ReturnsOnlyLogsLinkedToWorkspace()
     {
         var action = $"ws_isolation_{Guid.NewGuid():N}";
-        var now    = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
 
         await using (var db = Db())
         {
@@ -256,7 +262,7 @@ public sealed class AuditLogReadRepositoryTests : IAsyncLifetime
     {
         var actionA = $"ent_scopeA_{Guid.NewGuid():N}";
         var actionB = $"ent_scopeB_{Guid.NewGuid():N}";
-        var now     = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
 
         await using (var db = Db())
         {
@@ -278,7 +284,7 @@ public sealed class AuditLogReadRepositoryTests : IAsyncLifetime
     [Fact]
     public async Task GetOrganizationScopeAsync_ReturnsOnlyLogsForOrg()
     {
-        var now    = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
         var orgIdA = 200;
         var orgIdB = 201;
 
@@ -301,7 +307,7 @@ public sealed class AuditLogReadRepositoryTests : IAsyncLifetime
     [Fact]
     public async Task GetOrganizationScopeAsync_ActorFilter_NarrowsResults()
     {
-        var now   = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow;
         var orgId = 202;
 
         await using (var db = Db())

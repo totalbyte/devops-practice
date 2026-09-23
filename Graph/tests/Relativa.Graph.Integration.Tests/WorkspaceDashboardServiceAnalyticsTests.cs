@@ -1,13 +1,19 @@
 using DotNet.Testcontainers.Builders;
-using Microsoft.Extensions.Caching.Memory;
+
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+
 using NSubstitute;
+
 using Relativa.Graph.Dashboard;
 using Relativa.Graph.Data;
 using Relativa.Graph.ML;
 using Relativa.Persistence.Entities;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Graph.Integration.Tests;
@@ -101,7 +107,9 @@ public sealed class WorkspaceDashboardServiceAnalyticsTests : IAsyncLifetime
 
         var relType = new EntityRelationshipType
         {
-            Name = "deal_client", SourceEntityTypeId = dealType.Id, TargetEntityTypeId = clientType.Id,
+            Name = "deal_client",
+            SourceEntityTypeId = dealType.Id,
+            TargetEntityTypeId = clientType.Id,
             RelationshipCardinality = RelationshipCardinality.ManyToOne,
         };
         _db.EntityRelationshipTypes.Add(relType);

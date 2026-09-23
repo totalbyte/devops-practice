@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Core.Domain.Interfaces;
 using Relativa.Core.Infrastructure.Data;
 using Relativa.Persistence.Entities;
@@ -37,7 +38,9 @@ public sealed class WorkspaceRoleRepository(RelativaDbContext db) : IWorkspaceRo
         CancellationToken ct = default)
     {
         if (requiredPermissionNames.Count == 0)
+        {
             return null;
+        }
 
         var required = requiredPermissionNames.ToHashSet(StringComparer.Ordinal);
         var systemRoles = await db.WorkspaceRoles

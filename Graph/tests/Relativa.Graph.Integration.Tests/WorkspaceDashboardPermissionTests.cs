@@ -1,14 +1,21 @@
 using System.Diagnostics;
-using Microsoft.Extensions.Caching.Memory;
+
 using DotNet.Testcontainers.Builders;
+
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+
 using NSubstitute;
+
 using Relativa.Graph.Dashboard;
 using Relativa.Graph.Data;
 using Relativa.Graph.ML;
 using Relativa.Persistence.Entities;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Graph.Integration.Tests;
@@ -72,29 +79,29 @@ public sealed class WorkspaceDashboardPermissionTests : IAsyncLifetime
         var org = new Organization { Name = "Test Org", IsArchived = false };
         _db.Organizations.Add(org);
 
-        var analystUser        = new User { FirstName = "Ana",     LastName = "Analyst", Email = "analyst@test.com",       Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
-        var managerUser        = new User { FirstName = "Mark",    LastName = "Manager", Email = "manager@test.com",       Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
-        var outsiderUser       = new User { FirstName = "Outside", LastName = "User",    Email = "outsider@test.com",      Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
-        var archivedMemberUser = new User { FirstName = "Former",  LastName = "Member",  Email = "former.member@test.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
-        var basicStatsUser     = new User { FirstName = "Basic",   LastName = "Viewer",  Email = "basic.viewer@test.com",  Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
+        var analystUser = new User { FirstName = "Ana", LastName = "Analyst", Email = "analyst@test.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
+        var managerUser = new User { FirstName = "Mark", LastName = "Manager", Email = "manager@test.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
+        var outsiderUser = new User { FirstName = "Outside", LastName = "User", Email = "outsider@test.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
+        var archivedMemberUser = new User { FirstName = "Former", LastName = "Member", Email = "former.member@test.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
+        var basicStatsUser = new User { FirstName = "Basic", LastName = "Viewer", Email = "basic.viewer@test.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
         _db.Users.AddRange(analystUser, managerUser, outsiderUser, archivedMemberUser, basicStatsUser);
         await _db.SaveChangesAsync();
 
-        _analystUserId        = analystUser.Id;
-        _managerUserId        = managerUser.Id;
-        _outsiderUserId       = outsiderUser.Id;
+        _analystUserId = analystUser.Id;
+        _managerUserId = managerUser.Id;
+        _outsiderUserId = outsiderUser.Id;
         _archivedMemberUserId = archivedMemberUser.Id;
-        _basicStatsUserId     = basicStatsUser.Id;
+        _basicStatsUserId = basicStatsUser.Id;
 
-        var permViewAnalytics     = new Permission { Name = "view_analytics",      IsArchived = false };
-        var permViewBasic         = new Permission { Name = "view_basic_stats",    IsArchived = false };
+        var permViewAnalytics = new Permission { Name = "view_analytics", IsArchived = false };
+        var permViewBasic = new Permission { Name = "view_basic_stats", IsArchived = false };
         var permViewTeamAnalytics = new Permission { Name = "view_team_analytics", IsArchived = false };
         _db.Permissions.AddRange(permViewAnalytics, permViewBasic, permViewTeamAnalytics);
         await _db.SaveChangesAsync();
 
         var wsAnalystRole = new WorkspaceRole { Name = "ws_analyst", WorkspaceId = null, Priority = 3, IsArchived = false };
         var wsManagerRole = new WorkspaceRole { Name = "ws_manager", WorkspaceId = null, Priority = 2, IsArchived = false };
-        var wsViewerRole  = new WorkspaceRole { Name = "ws_viewer",  WorkspaceId = null, Priority = 4, IsArchived = false };
+        var wsViewerRole = new WorkspaceRole { Name = "ws_viewer", WorkspaceId = null, Priority = 4, IsArchived = false };
         _db.WorkspaceRoles.AddRange(wsAnalystRole, wsManagerRole, wsViewerRole);
         await _db.SaveChangesAsync();
 
@@ -104,26 +111,26 @@ public sealed class WorkspaceDashboardPermissionTests : IAsyncLifetime
             new WorkspaceRolePermission { WsRoleId = wsManagerRole.Id, PermissionId = permViewAnalytics.Id },
             new WorkspaceRolePermission { WsRoleId = wsManagerRole.Id, PermissionId = permViewBasic.Id },
             new WorkspaceRolePermission { WsRoleId = wsManagerRole.Id, PermissionId = permViewTeamAnalytics.Id },
-            new WorkspaceRolePermission { WsRoleId = wsViewerRole.Id,  PermissionId = permViewBasic.Id }
+            new WorkspaceRolePermission { WsRoleId = wsViewerRole.Id, PermissionId = permViewBasic.Id }
         );
         await _db.SaveChangesAsync();
 
-        var targetWs   = new Workspace { Name = "Target WS",   IsArchived = false, CreatedByUserId = analystUser.Id,  OrganizationId = org.Id };
-        var otherWs    = new Workspace { Name = "Other WS",    IsArchived = false, CreatedByUserId = outsiderUser.Id, OrganizationId = org.Id };
-        var archivedWs = new Workspace { Name = "Archived WS", IsArchived = true,  CreatedByUserId = analystUser.Id,  OrganizationId = org.Id };
+        var targetWs = new Workspace { Name = "Target WS", IsArchived = false, CreatedByUserId = analystUser.Id, OrganizationId = org.Id };
+        var otherWs = new Workspace { Name = "Other WS", IsArchived = false, CreatedByUserId = outsiderUser.Id, OrganizationId = org.Id };
+        var archivedWs = new Workspace { Name = "Archived WS", IsArchived = true, CreatedByUserId = analystUser.Id, OrganizationId = org.Id };
         _db.Workspaces.AddRange(targetWs, otherWs, archivedWs);
         await _db.SaveChangesAsync();
 
-        _targetWorkspaceId   = targetWs.Id;
+        _targetWorkspaceId = targetWs.Id;
         _archivedWorkspaceId = archivedWs.Id;
 
         _db.UserRoleWorkspaces.AddRange(
-            new UserRoleWorkspace { UserId = analystUser.Id,        WorkspaceId = targetWs.Id,   WsRoleId = wsAnalystRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = false },
-            new UserRoleWorkspace { UserId = managerUser.Id,        WorkspaceId = targetWs.Id,   WsRoleId = wsManagerRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = false },
-            new UserRoleWorkspace { UserId = outsiderUser.Id,       WorkspaceId = otherWs.Id,    WsRoleId = wsManagerRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = false },
-            new UserRoleWorkspace { UserId = archivedMemberUser.Id, WorkspaceId = targetWs.Id,   WsRoleId = wsAnalystRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = true  },
-            new UserRoleWorkspace { UserId = analystUser.Id,        WorkspaceId = archivedWs.Id, WsRoleId = wsAnalystRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = false },
-            new UserRoleWorkspace { UserId = basicStatsUser.Id,     WorkspaceId = targetWs.Id,   WsRoleId = wsViewerRole.Id,  JoinedAt = DateTime.UtcNow, IsArchived = false }
+            new UserRoleWorkspace { UserId = analystUser.Id, WorkspaceId = targetWs.Id, WsRoleId = wsAnalystRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = false },
+            new UserRoleWorkspace { UserId = managerUser.Id, WorkspaceId = targetWs.Id, WsRoleId = wsManagerRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = false },
+            new UserRoleWorkspace { UserId = outsiderUser.Id, WorkspaceId = otherWs.Id, WsRoleId = wsManagerRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = false },
+            new UserRoleWorkspace { UserId = archivedMemberUser.Id, WorkspaceId = targetWs.Id, WsRoleId = wsAnalystRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = true },
+            new UserRoleWorkspace { UserId = analystUser.Id, WorkspaceId = archivedWs.Id, WsRoleId = wsAnalystRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = false },
+            new UserRoleWorkspace { UserId = basicStatsUser.Id, WorkspaceId = targetWs.Id, WsRoleId = wsViewerRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = false }
         );
         await _db.SaveChangesAsync();
     }

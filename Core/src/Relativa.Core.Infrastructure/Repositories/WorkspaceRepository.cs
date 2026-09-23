@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Core.Domain.Interfaces;
 using Relativa.Core.Infrastructure.Data;
 using Relativa.Persistence.Entities;
@@ -30,7 +31,9 @@ public sealed class WorkspaceRepository(RelativaDbContext db) : IWorkspaceReposi
             .ToListAsync(ct);
 
         if (orgOwnerOrgIds.Count == 0)
+        {
             return viaMembership;
+        }
 
         var ownedOrgWorkspaces = await db.Workspaces
             .AsNoTracking()
@@ -68,7 +71,9 @@ public sealed class WorkspaceRepository(RelativaDbContext db) : IWorkspaceReposi
             .AnyAsync(uro => uro.Role != null && uro.Role.Name == "org_owner", ct);
 
         if (!isOrgOwner)
+        {
             return viaMembership;
+        }
 
         var allOrg = await GetByOrganizationIdAsync(organizationId, ct);
 

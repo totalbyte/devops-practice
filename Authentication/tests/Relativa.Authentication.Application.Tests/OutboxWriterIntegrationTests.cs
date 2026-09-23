@@ -1,11 +1,17 @@
 using System.Text.Json;
+
 using DotNet.Testcontainers.Builders;
+
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Authentication.Infrastructure.Data;
 using Relativa.Authentication.Infrastructure.Services.Audit;
 using Relativa.Persistence.Contracts;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Authentication.Application.Tests;

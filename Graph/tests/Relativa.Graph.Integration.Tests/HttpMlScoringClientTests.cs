@@ -1,9 +1,14 @@
 using System.Net;
 using System.Text;
+
 using FluentAssertions;
+
 using Microsoft.Extensions.Logging;
+
 using NSubstitute;
+
 using Relativa.Graph.ML;
+
 using Xunit;
 
 namespace Relativa.Graph.Integration.Tests;

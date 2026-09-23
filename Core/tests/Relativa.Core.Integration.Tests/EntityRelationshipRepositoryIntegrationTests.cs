@@ -1,10 +1,15 @@
 using DotNet.Testcontainers.Builders;
+
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Core.Infrastructure.Data;
 using Relativa.Core.Infrastructure.Repositories;
 using Relativa.Persistence.Entities;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Core.Integration.Tests;
@@ -75,7 +80,9 @@ public sealed class EntityRelationshipRepositoryIntegrationTests : IAsyncLifetim
         await using var db = Db();
         var rel = await Sut(db).AddRelationshipAsync(new EntityRelationship
         {
-            SourceEntityId = sourceId, TargetEntityId = targetId, RelationshipTypeId = _relTypeId,
+            SourceEntityId = sourceId,
+            TargetEntityId = targetId,
+            RelationshipTypeId = _relTypeId,
         });
         return rel.Id;
     }

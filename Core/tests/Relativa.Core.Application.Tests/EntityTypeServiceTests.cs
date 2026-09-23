@@ -1,9 +1,13 @@
 using FluentAssertions;
+
 using Microsoft.Extensions.Caching.Memory;
+
 using Moq;
+
 using Relativa.Core.Application.Services;
 using Relativa.Core.Domain.Interfaces;
 using Relativa.Persistence.Entities;
+
 using Xunit;
 
 namespace Relativa.Core.Application.Tests;

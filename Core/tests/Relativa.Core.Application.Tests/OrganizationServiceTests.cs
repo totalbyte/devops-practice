@@ -1,16 +1,20 @@
 using System.Text.Json;
+
 using FluentAssertions;
+
 using FluentValidation;
 using FluentValidation.Results;
+
 using Moq;
+
 using Relativa.Core.Application.Authorization;
 using Relativa.Core.Application.DTOs.Organization;
 using Relativa.Core.Application.Exceptions;
-using Relativa.Core.Application.Interfaces;
 using Relativa.Core.Application.Services;
 using Relativa.Core.Domain.Interfaces;
 using Relativa.Persistence.Contracts;
 using Relativa.Persistence.Entities;
+
 using Xunit;
 
 namespace Relativa.Core.Application.Tests;
@@ -537,7 +541,7 @@ public sealed class OrganizationServiceTests
         var result = await _sut.SearchAsync("rel");
 
         result.Should().HaveCount(2);
-        result.Should().Contain(r => r.Id == 1 && r.Name == "Relativa"  && r.MemberCount == 12);
+        result.Should().Contain(r => r.Id == 1 && r.Name == "Relativa" && r.MemberCount == 12);
         result.Should().Contain(r => r.Id == 2 && r.Name == "Acme Corp" && r.MemberCount == 3);
     }
 

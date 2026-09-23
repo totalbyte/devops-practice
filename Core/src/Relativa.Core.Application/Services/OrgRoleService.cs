@@ -1,7 +1,8 @@
-using Relativa.Core.Application.Exceptions;
 using FluentValidation;
+
 using Relativa.Core.Application.DTOs.OrgRole;
 using Relativa.Core.Application.DTOs.Role;
+using Relativa.Core.Application.Exceptions;
 using Relativa.Core.Application.Interfaces;
 using Relativa.Core.Application.Utilities;
 using Relativa.Core.Domain.Interfaces;
@@ -45,7 +46,9 @@ public sealed class OrgRoleService(
 
         var permissions = await permissionRepository.GetByIdsAsync(request.PermissionIds, ct);
         if (permissions.Count != request.PermissionIds.Count)
+        {
             throw new AppException("invalid_permission_ids", 400, "One or more permission IDs are invalid.");
+        }
 
         var role = new OrganizationRole
         {
@@ -104,22 +107,32 @@ public sealed class OrgRoleService(
             ?? throw new AppException("role_not_found", 404, "Role not found.");
 
         if (role.OrganizationId is null)
+        {
             throw new AppException("system_role_immutable", 409, "System roles cannot be modified.");
+        }
 
         if (role.OrganizationId != organizationId)
+        {
             throw new AppException("role_not_in_organization", 404, "Role not found in this organization.");
+        }
 
         if (request.Name is not null)
+        {
             role.Name = request.Name;
+        }
 
         if (request.Priority.HasValue)
+        {
             role.Priority = request.Priority.Value;
+        }
 
         if (request.PermissionIds is not null)
         {
             var permissions = await permissionRepository.GetByIdsAsync(request.PermissionIds, ct);
             if (permissions.Count != request.PermissionIds.Count)
+            {
                 throw new AppException("invalid_permission_ids", 400, "One or more permission IDs are invalid.");
+            }
 
             role.RolePermissions.Clear();
             foreach (var perm in permissions)
@@ -168,10 +181,14 @@ public sealed class OrgRoleService(
             ?? throw new AppException("role_not_found", 404, "Role not found.");
 
         if (role.OrganizationId is null)
+        {
             throw new AppException("system_role_undeletable", 409, "System roles cannot be deleted.");
+        }
 
         if (role.OrganizationId != organizationId)
+        {
             throw new AppException("role_not_in_organization", 404, "Role not found in this organization.");
+        }
 
         role.IsArchived = true;
         await orgRoleRepository.UpdateAsync(role, ct);
@@ -207,6 +224,8 @@ public sealed class OrgRoleService(
         var hasPermission = membership.Role?.RolePermissions
             .Any(rp => rp.Permission?.Name == permission) ?? false;
         if (!hasPermission)
+        {
             throw new AppException("permission_denied", 403, $"You do not have the '{permission}' permission in this organization.");
+        }
     }
 }

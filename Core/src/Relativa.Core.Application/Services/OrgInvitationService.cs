@@ -1,7 +1,8 @@
-using Relativa.Core.Application.Exceptions;
 using FluentValidation;
+
 using Relativa.Authentication.Domain.Interfaces;
 using Relativa.Core.Application.DTOs.OrgInvitation;
+using Relativa.Core.Application.Exceptions;
 using Relativa.Core.Application.Interfaces;
 using Relativa.Core.Application.Utilities;
 using Relativa.Core.Domain.Interfaces;
@@ -94,10 +95,14 @@ public sealed class OrgInvitationService(
             ?? throw new AppException("invitation_not_found", 404, "Invitation not found.");
 
         if (invitation.OrganizationId != organizationId)
+        {
             throw new AppException("invitation_not_found", 404, "Invitation not found.");
+        }
 
         if (invitation.Status != "Pending")
+        {
             throw new AppException("invitation_not_pending", 409, $"Invitation is no longer pending (status: {invitation.Status}).");
+        }
 
         invitation.Status = "Cancelled";
         await invitationRepository.UpdateAsync(invitation, ct);
@@ -119,10 +124,14 @@ public sealed class OrgInvitationService(
             ?? throw new AppException("invitation_not_found", 404, "Invitation not found.");
 
         if (invitation.OrganizationId != organizationId)
+        {
             throw new AppException("invitation_not_found", 404, "Invitation not found.");
+        }
 
         if (invitation.Status != "Pending")
+        {
             throw new AppException("invitation_cannot_resend", 409, $"Cannot resend invitation in status '{invitation.Status}'.");
+        }
 
         var previousToken = invitation.Token;
         var previousExpiresAt = invitation.ExpiresAt;
@@ -158,10 +167,14 @@ public sealed class OrgInvitationService(
             ?? throw new AppException("invitation_not_found_or_expired", 404, "Invitation not found or has expired.");
 
         if (!string.Equals(invitation.Email, userEmail, StringComparison.OrdinalIgnoreCase))
+        {
             throw new AppException("invitation_email_mismatch", 403, "This invitation was sent to a different email address.");
+        }
 
         if (invitation.Status != "Pending")
+        {
             throw new AppException("invitation_not_pending", 409, $"Invitation is no longer pending (status: {invitation.Status}).");
+        }
 
         if (invitation.ExpiresAt < DateTime.UtcNow)
         {
@@ -172,7 +185,9 @@ public sealed class OrgInvitationService(
 
         var existingMembership = await orgMemberRepository.GetAsync(userId, invitation.OrganizationId, ct);
         if (existingMembership is not null)
+        {
             throw new AppException("already_org_member", 409, "You are already a member of this organization.");
+        }
 
         var membership = new UserRoleOrganization
         {
@@ -211,10 +226,14 @@ public sealed class OrgInvitationService(
             ?? throw new AppException("invitation_not_found_or_expired", 404, "Invitation not found or has expired.");
 
         if (!string.Equals(invitation.Email, userEmail, StringComparison.OrdinalIgnoreCase))
+        {
             throw new AppException("invitation_email_mismatch", 403, "This invitation was sent to a different email address.");
+        }
 
         if (invitation.Status != "Pending")
+        {
             throw new AppException("invitation_not_pending", 409, $"Invitation is no longer pending (status: {invitation.Status}).");
+        }
 
         invitation.Status = "Declined";
         await invitationRepository.UpdateAsync(invitation, ct);
@@ -231,7 +250,9 @@ public sealed class OrgInvitationService(
     public async Task<List<OrgInvitationDto>> GetMyPendingInvitationsAsync(string userEmail, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(userEmail))
+        {
             return [];
+        }
 
         var now = DateTime.UtcNow;
         var orgInvitations = await invitationRepository.GetByEmailAsync(userEmail, ct);
@@ -267,7 +288,9 @@ public sealed class OrgInvitationService(
             ?? throw new AppException("role_not_found", 400, "The specified role does not exist.");
 
         if (role.OrganizationId.HasValue && role.OrganizationId.Value != organizationId)
+        {
             throw new AppException("role_not_in_organization", 400, "The specified role does not belong to this organization.");
+        }
 
         if (defaultRole is null || role.Id != defaultRole.Id)
         {
@@ -280,17 +303,26 @@ public sealed class OrgInvitationService(
     private async Task EnsureNotExistingMemberAsync(int organizationId, string normalizedEmail, CancellationToken ct)
     {
         var user = await userRepository.GetByEmailAsync(normalizedEmail, ct);
-        if (user is null) return;
+        if (user is null)
+        {
+            return;
+        }
 
         var existing = await orgMemberRepository.GetAsync(user.Id, organizationId, ct);
         if (existing is not null)
+        {
             throw new AppException("already_org_member", 409, "This user is already a member of the organization.");
+        }
     }
 
     private async Task EnsureNoPendingInvitationAsync(int organizationId, string normalizedEmail, CancellationToken ct)
     {
         var existing = await invitationRepository.GetPendingByOrgAndEmailAsync(organizationId, normalizedEmail, ct);
-        if (existing is null) return;
+        if (existing is null)
+        {
+            return;
+        }
+
         if (existing.ExpiresAt <= DateTime.UtcNow)
         {
             existing.Status = "Expired";
@@ -302,7 +334,10 @@ public sealed class OrgInvitationService(
 
     private async Task EnqueueAuditAsync(int actorUserId, int organizationId, string action, string? field, object? oldJson, object? newJson, CancellationToken ct)
     {
-        if (auditOutboxWriter is null) return;
+        if (auditOutboxWriter is null)
+        {
+            return;
+        }
 
         await auditOutboxWriter.EnqueueAuditAsync(
             new AuditEventContract(
@@ -333,6 +368,8 @@ public sealed class OrgInvitationService(
         var hasPermission = membership.Role?.RolePermissions
             .Any(rp => rp.Permission?.Name == permission) ?? false;
         if (!hasPermission)
+        {
             throw new AppException("permission_denied", 403, $"You do not have the '{permission}' permission in this organization.");
+        }
     }
 }

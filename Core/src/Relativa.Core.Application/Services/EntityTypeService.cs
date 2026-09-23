@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Caching.Memory;
+
 using Relativa.Core.Application.DTOs.EntityType;
 using Relativa.Core.Application.Interfaces;
 using Relativa.Core.Application.Utilities;
@@ -14,7 +15,9 @@ public sealed class EntityTypeService(IEntityTypeRepository entityTypeRepository
     public async Task<List<EntityTypeDto>> GetAllAsync(CancellationToken ct = default)
     {
         if (cache.TryGetValue(CacheKey, out List<EntityTypeDto>? cached) && cached is not null)
+        {
             return cached;
+        }
 
         var types = await entityTypeRepository.GetAllWithPropertiesAsync(ct);
 

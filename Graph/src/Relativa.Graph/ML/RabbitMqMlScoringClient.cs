@@ -1,8 +1,10 @@
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+
 using Microsoft.Extensions.Options;
+
 using RabbitMQ.Client;
+
 using Relativa.Graph.Messaging;
 using Relativa.Persistence.Contracts;
 
@@ -25,7 +27,9 @@ public sealed class RabbitMqMlScoringClient(
         CancellationToken ct = default)
     {
         if (dealEntityIds.Count == 0)
+        {
             return new Dictionary<int, MlScoreDto>();
+        }
 
         try
         {
@@ -106,7 +110,9 @@ public sealed class RabbitMqMlScoringClient(
             }
 
             if (get.BasicProperties?.CorrelationId != correlationId)
+            {
                 continue;
+            }
 
             var replyJson = Encoding.UTF8.GetString(get.Body.ToArray());
             var reply = JsonSerializer.Deserialize<MlScoreRpcReplyV1>(replyJson, Json);

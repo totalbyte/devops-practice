@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Audit.Application.DTOs;
 using Relativa.Audit.Application.Exceptions;
 using Relativa.Audit.Application.Interfaces;
@@ -28,25 +30,33 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
         if (q.WorkspaceId is { } wId)
         {
             if (!await db.Set<Workspace>().AsNoTracking().AnyAsync(x => x.Id == wId, ct))
+            {
                 throw new AppException("workspace_not_found", 404, $"Workspace with id {wId} was not found.");
+            }
         }
 
         if (q.OrganizationId is { } oId)
         {
             if (!await db.Set<Organization>().AsNoTracking().AnyAsync(x => x.Id == oId, ct))
+            {
                 throw new AppException("organization_not_found", 404, $"Organization with id {oId} was not found.");
+            }
         }
 
         if (q.EntityId is { } eId)
         {
             if (!await db.Set<Entity>().AsNoTracking().AnyAsync(x => x.Id == eId, ct))
+            {
                 throw new AppException("entity_not_found", 404, $"Entity with id {eId} was not found.");
+            }
         }
 
         if (q.TargetUserId is { } tuId)
         {
             if (!await db.Set<User>().AsNoTracking().AnyAsync(x => x.Id == tuId, ct))
+            {
                 throw new AppException("user_not_found", 404, $"User with id {tuId} was not found.");
+            }
         }
 
         if (category == "entity" && q.EntityId is { } entId && q.WorkspaceId is { } wsId)
@@ -54,7 +64,9 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
             var linked = await db.Set<EntityWorkspace>().AsNoTracking()
                 .AnyAsync(x => x.EntityId == entId && x.WorkspaceId == wsId, ct);
             if (!linked)
+            {
                 throw new AppException("entity_not_in_workspace", 404, $"Entity {entId} is not linked to workspace {wsId}.");
+            }
         }
     }
 
@@ -129,9 +141,15 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
             .Where(x => x.EntityId != null && entityIdsInWs.Contains(x.EntityId.Value));
 
         if (!string.IsNullOrWhiteSpace(actionFilter))
+        {
             query = query.Where(x => x.Action.Contains(actionFilter));
+        }
+
         if (entityId.HasValue)
+        {
             query = query.Where(x => x.EntityId == entityId.Value);
+        }
+
         if (!string.IsNullOrWhiteSpace(domainEntityType))
         {
             var d = domainEntityType.Trim();
@@ -139,7 +157,9 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
         }
 
         if (actorUserId.HasValue)
+        {
             query = query.Where(x => x.ChangedById == actorUserId.Value);
+        }
 
         var total = await query.LongCountAsync(ct);
         var rows = await query
@@ -178,9 +198,14 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
             .Where(x => x.ChangedAt >= from && x.ChangedAt <= to && x.WorkspaceId == workspaceId);
 
         if (!string.IsNullOrWhiteSpace(actionFilter))
+        {
             query = query.Where(x => x.Action.Contains(actionFilter));
+        }
+
         if (actorUserId.HasValue)
+        {
             query = query.Where(x => x.ChangedById == actorUserId.Value);
+        }
 
         var total = await query.LongCountAsync(ct);
         var rows = await query
@@ -211,9 +236,14 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
             .Where(x => x.ChangedAt >= from && x.ChangedAt <= to && x.OrganizationId == organizationId);
 
         if (!string.IsNullOrWhiteSpace(actionFilter))
+        {
             query = query.Where(x => x.Action.Contains(actionFilter));
+        }
+
         if (actorUserId.HasValue)
+        {
             query = query.Where(x => x.ChangedById == actorUserId.Value);
+        }
 
         var total = await query.LongCountAsync(ct);
         var rows = await query
@@ -245,7 +275,9 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
         if (targetUserIdFilter.HasValue)
         {
             if (!visibleTargets.Contains(targetUserIdFilter.Value))
+            {
                 throw new AppException("audit_forbidden_user", 403, "You are not allowed to view audit for this user.");
+            }
         }
 
         var query = db.UserAuditLogs.AsNoTracking()
@@ -254,11 +286,19 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
                         && visibleTargets.Contains(x.TargetUserId.Value));
 
         if (!string.IsNullOrWhiteSpace(actionFilter))
+        {
             query = query.Where(x => x.Action.Contains(actionFilter));
+        }
+
         if (actorUserId.HasValue)
+        {
             query = query.Where(x => x.ChangedById == actorUserId.Value);
+        }
+
         if (targetUserIdFilter.HasValue)
+        {
             query = query.Where(x => x.TargetUserId == targetUserIdFilter.Value);
+        }
 
         var total = await query.LongCountAsync(ct);
         var rows = await query
@@ -284,7 +324,9 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
             select urw.Id).AnyAsync(ct);
 
         if (!ok)
+        {
             throw new AppException("permission_denied", 403, $"Audit log requires '{ViewAnalyticsPermission}' permission in workspace scope.");
+        }
     }
 
     private async Task RequireOrgOwnerOrAdminAsync(int userId, int organizationId, CancellationToken ct)
@@ -298,7 +340,9 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
             select uro.Id).AnyAsync(ct);
 
         if (!ok)
+        {
             throw new AppException("permission_denied", 403, $"Audit log requires '{ManageOrgSettingsPermission}' permission in organization scope.");
+        }
     }
 
     private async Task<HashSet<int>> GetVisibleTargetUserIdsAsync(int callerUserId, CancellationToken ct)
@@ -314,7 +358,9 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
                   && cp.Name == ManageOrgSettingsPermission
             select tu.UserId).Distinct().ToListAsync(ct);
         foreach (var u in orgTargets)
+        {
             visible.Add(u);
+        }
 
         var wsTargets = await (
             from cw in db.Set<UserRoleWorkspace>().AsNoTracking()
@@ -325,7 +371,9 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
                   && wp.Name == ViewAnalyticsPermission
             select tw.UserId).Distinct().ToListAsync(ct);
         foreach (var u in wsTargets)
+        {
             visible.Add(u);
+        }
 
         return visible;
     }
@@ -333,7 +381,10 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
     private static int? ParseEntityTypeId(string? s)
     {
         if (string.IsNullOrWhiteSpace(s))
+        {
             return null;
+        }
+
         return int.TryParse(s.Trim(), out var id) ? id : null;
     }
 
@@ -343,7 +394,9 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
     {
         var result = new Dictionary<int, IReadOnlyList<PropertyDefinitionDto>>();
         if (entityTypeIds.Count == 0)
+        {
             return result;
+        }
 
         var rows = await (
             from etp in db.Set<EntityTypeProperty>().AsNoTracking()
@@ -369,20 +422,30 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
         var entityDeleted = r.EntityId.HasValue && r.Entity == null;
         IReadOnlyList<PropertyDefinitionDto>? defs = null;
         if (typeId.HasValue && propDefsByType.TryGetValue(typeId.Value, out var d))
+        {
             defs = d;
+        }
 
         var (propChanges, defsOut) = BuildPropertyChanges(r.OldValue, r.NewValue, defs);
         if (defs is null)
+        {
             defs = defsOut;
+        }
 
         EntityAuditContextDto? entCtx;
         if (r.Entity != null)
+        {
             entCtx = new EntityAuditContextDto(
                 r.Entity.Id, r.Entity.EntityTypeId, r.Entity.EntityType?.Name, r.Entity.IsArchived);
+        }
         else if (r.EntityId.HasValue)
+        {
             entCtx = new EntityAuditContextDto(r.EntityId.Value, typeId, null, null);
+        }
         else
+        {
             entCtx = null;
+        }
 
         return new AuditLogEntryDto(
             r.Id,
@@ -407,11 +470,13 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
     {
         WorkspaceAuditContextDto? wctx = null;
         if (r.Workspace != null)
+        {
             wctx = new WorkspaceAuditContextDto(
                 r.Workspace.Id,
                 r.Workspace.Name,
                 r.Workspace.OrganizationId,
                 r.Workspace.Organization?.Name);
+        }
 
         return new AuditLogEntryDto(
             r.Id,
@@ -436,7 +501,9 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
     {
         OrganizationAuditContextDto? octx = null;
         if (r.Organization != null)
+        {
             octx = new OrganizationAuditContextDto(r.Organization.Id, r.Organization.Name);
+        }
 
         return new AuditLogEntryDto(
             r.Id,
@@ -461,11 +528,13 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
     {
         UserAuditContextDto? tu = null;
         if (r.TargetUser != null)
+        {
             tu = new UserAuditContextDto(
                 r.TargetUser.Id,
                 r.TargetUser.Email,
                 r.TargetUser.FirstName,
                 r.TargetUser.LastName);
+        }
 
         return new AuditLogEntryDto(
             r.Id,
@@ -489,16 +558,25 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
     private static ActorDto? MapActor(int? id, User? u)
     {
         if (id is null && u is null)
+        {
             return null;
+        }
+
         if (u != null)
+        {
             return new ActorDto(u.Id, u.Email, u.FirstName, u.LastName);
+        }
+
         return new ActorDto(id, null, null, null);
     }
 
     private static object? JsonDocumentToObject(JsonDocument? doc)
     {
         if (doc is null)
+        {
             return null;
+        }
+
         return JsonSerializer.Deserialize<JsonElement>(doc.RootElement.GetRawText());
     }
 
@@ -509,7 +587,9 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
             IReadOnlyList<PropertyDefinitionDto>? defs)
     {
         if (defs is null || defs.Count == 0)
+        {
             return (null, null);
+        }
 
         var defMap = defs.ToDictionary(d => d.PropertyId);
 
@@ -518,9 +598,14 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
         try
         {
             if (newDoc != null)
+            {
                 newList = JsonSerializer.Deserialize<List<PropertyValueDto>>(newDoc.RootElement.GetRawText(), JsonOpts);
+            }
+
             if (oldDoc != null)
+            {
                 oldList = JsonSerializer.Deserialize<List<PropertyValueDto>>(oldDoc.RootElement.GetRawText(), JsonOpts);
+            }
         }
         catch (JsonException)
         {
@@ -528,19 +613,25 @@ public sealed class AuditLogReadRepository(AuditDbContext db) : IAuditLogReadRep
         }
 
         if (newList is null && oldList is null)
+        {
             return (null, defs);
+        }
 
         var ids = new HashSet<int>();
         if (newList is not null)
         {
             foreach (var x in newList)
+            {
                 ids.Add(x.PropertyId);
+            }
         }
 
         if (oldList is not null)
         {
             foreach (var x in oldList)
+            {
                 ids.Add(x.PropertyId);
+            }
         }
 
         var changes = new List<PropertyChangeDto>();

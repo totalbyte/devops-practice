@@ -1,5 +1,3 @@
-using Relativa.Messaging;
-
 namespace Relativa.Messaging.Tests;
 
 public sealed class RabbitMqExchangeRouterTests

@@ -1,8 +1,12 @@
 using System.Text.Json;
+
 using FluentAssertions;
+
 using FluentValidation;
 using FluentValidation.Results;
+
 using Moq;
+
 using Relativa.Core.Application.Authorization;
 using Relativa.Core.Application.DTOs.Workspace;
 using Relativa.Core.Application.Exceptions;
@@ -10,6 +14,7 @@ using Relativa.Core.Application.Services;
 using Relativa.Core.Domain.Interfaces;
 using Relativa.Persistence.Contracts;
 using Relativa.Persistence.Entities;
+
 using Xunit;
 
 namespace Relativa.Core.Application.Tests;
@@ -176,7 +181,8 @@ public sealed class WorkspaceServiceTests
             .Setup(r => r.GetAsync(1, 5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserRoleOrganization
             {
-                UserId = 1, OrganizationId = 5,
+                UserId = 1,
+                OrganizationId = 5,
                 Role = new OrganizationRole { Name = "org_viewer", RolePermissions = [] }
             });
 
@@ -315,7 +321,8 @@ public sealed class WorkspaceServiceTests
         _memberRepo.Setup(r => r.GetAsync(3, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserRoleWorkspace
             {
-                UserId = 3, WorkspaceId = 10,
+                UserId = 3,
+                WorkspaceId = 10,
                 Role = new WorkspaceRole { Name = "analyst", RolePermissions = [] }
             });
 
@@ -604,7 +611,8 @@ public sealed class WorkspaceServiceTests
         _memberRepo.Setup(r => r.GetAsync(1, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserRoleWorkspace
             {
-                UserId = 1, WorkspaceId = 10,
+                UserId = 1,
+                WorkspaceId = 10,
                 Role = new WorkspaceRole { Name = "analyst", RolePermissions = [] }
             });
 

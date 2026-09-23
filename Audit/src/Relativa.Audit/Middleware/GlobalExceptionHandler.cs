@@ -1,7 +1,10 @@
 using FluentValidation;
+
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+
 using Npgsql;
+
 using Relativa.Audit.Application.Exceptions;
 
 namespace Relativa.Audit.Middleware;
@@ -29,9 +32,13 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         };
 
         if (statusCode == StatusCodes.Status500InternalServerError)
+        {
             logger.LogError(exception, "Unhandled exception");
+        }
         else
+        {
             logger.LogWarning(exception, "Handled exception: {Title}", title);
+        }
 
         httpContext.Response.StatusCode = statusCode;
         await httpContext.Response.WriteAsJsonAsync(new
@@ -47,11 +54,11 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
 
     private static string TitleForStatus(int status) => status switch
     {
-        StatusCodes.Status400BadRequest   => "Bad Request",
+        StatusCodes.Status400BadRequest => "Bad Request",
         StatusCodes.Status401Unauthorized => "Unauthorized",
-        StatusCodes.Status403Forbidden    => "Forbidden",
-        StatusCodes.Status404NotFound     => "Not Found",
-        StatusCodes.Status409Conflict     => "Conflict",
-        _                                 => "Error"
+        StatusCodes.Status403Forbidden => "Forbidden",
+        StatusCodes.Status404NotFound => "Not Found",
+        StatusCodes.Status409Conflict => "Conflict",
+        _ => "Error"
     };
 }
