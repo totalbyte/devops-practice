@@ -133,7 +133,18 @@ docker compose logs -f gateway
 
 - If **`migration` exits with a non-zero code** (for example 255), read its logs: `docker compose logs migration`. Typical causes are Postgres not reachable, wrong credentials in `.env`, or migrations failing against the database. The migration host uses the app output directory as its content root so `appsettings.json` and `ConnectionStrings__Default` from compose are applied correctly.
 
-## 8) Implementation notes
+## 8) Run published images (no local build)
+
+Every push is built and published by CI to GitHub Container Registry (`ghcr.io/totalbyte/relativa-<service>`): tag `latest` for `main`, `sha-<7 chars>` for every commit. The override file swaps all `build:` sections for those images:
+
+```bash
+IMAGE_TAG=latest docker compose -f docker-compose.yaml -f docker-compose.images.yaml pull
+IMAGE_TAG=latest docker compose -f docker-compose.yaml -f docker-compose.images.yaml up -d
+```
+
+Use `IMAGE_TAG=sha-abc1234` to run one specific commit. Details: [docs/ai-guides/CI-PIPELINE.md](docs/ai-guides/CI-PIPELINE.md).
+
+## 9) Implementation notes
 
 - Gateway upstream routes are overridden in `docker-compose.yaml` to use Docker DNS service names (`auth`, `core`, `graph`, `ml`, `audit`).
 - **Core** and **Authentication** read PostgreSQL `ConnectionStrings__Default` from compose (host `postgres`, credentials from `.env`).

@@ -1,11 +1,14 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Text;
+
 using FluentAssertions;
+
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+
 using Relativa.Authentication.Infrastructure.Services;
 using Relativa.Persistence.Entities;
+
 using Xunit;
 
 namespace Relativa.Authentication.Application.Tests;

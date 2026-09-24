@@ -1,6 +1,6 @@
 # Docker Setup -- Infrastructure and Deployment
 
-> **Last verified:** 2026-05-15 (ML startup script now also launches `run_graph_score_consumer`; no new env vars needed — ML already has `RABBITMQ_*`.)
+> **Last verified:** 2026-09-23 (Tracked `.dockerignore` per build context; `docker-compose.images.yaml` override for prebuilt GHCR/CI images; `IMAGE_REGISTRY` / `IMAGE_TAG`; Client image is `node:22-alpine`; client also has `develop.watch`.)
 
 > **Maintenance obligation:** If you change Docker Compose, Dockerfiles, networking, volumes, or environment variables, update this file and its "Last verified" date before finishing your task. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -10,7 +10,7 @@
 
 ## Compose Topology
 
-**File:** `docker-compose.yaml` (single file, no overrides)
+**Files:** `docker-compose.yaml` (full stack, builds images from the Dockerfiles) and the optional override `docker-compose.images.yaml` (same stack from prebuilt images, see [Running from prebuilt images](#running-from-prebuilt-images)).
 
 ```mermaid
 flowchart TD
@@ -130,12 +130,23 @@ Services that reference the shared `Persistence` library need the **repo root** 
 | `Graph/Dockerfile` | `.` (repo root) | Yes (`Persistence/` for choreography contracts + Postgres idempotency) |
 | `Audit/Dockerfile` | `.` (repo root) | Yes |
 
+### Build context filters (`.dockerignore`)
+
+Each build context has a tracked `.dockerignore`, so host build output never reaches an image (Windows `obj/project.assets.json` or `node_modules` binaries copied into a Linux build break `dotnet publish` / Vite):
+
+| Context | File | Excludes |
+|---|---|---|
+| `.` (auth, core, graph, audit, migration) | `.dockerignore` | `.git`, `.env*`, `**/bin`, `**/obj`, `**/TestResults`, `**/logs`, and folders no root-context Dockerfile copies (`Client/`, `ML/`, `Gateway/`, `tests/`, `docs/`, …) |
+| `./Gateway` | `Gateway/.dockerignore` | `bin/`, `obj/`, `logs/`, `tests/` |
+| `./Client` | `Client/.dockerignore` | `node_modules/`, `dist/`, `coverage/`, `.env*` |
+| `./ML` | `ML/.dockerignore` | `.venv/`, `__pycache__/`, `.ruff_cache/`, `*.egg-info/`, `.env` |
+
 ### Non-.NET services
 
 | Dockerfile | Base image | Notes |
 |---|---|---|
-| `ML/Dockerfile` | `python:3.12-slim` | Installs editable package; **`scripts/run_api_and_consumer.sh`** runs `manage.py run_domain_consumer` concurrently with Django `runserver` |
-| `Client/Dockerfile` | `node:20-alpine` | `npm ci`, runs `npm run dev -- --host 0.0.0.0 --port 3000` |
+| `ML/Dockerfile` | `python:3.12-slim` | Installs editable package, then uninstalls `pip` (not needed at runtime; its vendored packages were flagged by Trivy); **`scripts/run_api_and_consumer.sh`** runs `manage.py run_domain_consumer` concurrently with Django `runserver` |
+| `Client/Dockerfile` | `node:22-alpine` | Upgrades the bundled npm 10 to npm 11 (fixes pacote/sigstore/tar advisories), `npm ci`, runs `npm run dev -- --host 0.0.0.0 --port 3000` (dev server, see PROJECT-STATUS known issues) |
 
 ---
 
@@ -163,6 +174,9 @@ Template for Docker Compose variable substitution. Users copy to `.env` (gitigno
 | `JWT_ISSUER` | auth, gateway, audit | Token issuer claim |
 | `JWT_AUDIENCE` | auth, gateway, audit | Token audience claim |
 
+| `IMAGE_REGISTRY` | `docker-compose.images.yaml` only | Registry namespace of prebuilt images (default `ghcr.io/totalbyte`) |
+| `IMAGE_TAG` | `docker-compose.images.yaml` only | Image tag to run: `latest` (main) or `sha-<7 chars>` |
+
 ### How env vars reach services
 
 - **Docker Compose** injects environment variables into containers. Values come from `.env` via `${VAR}` substitution in `docker-compose.yaml`.
@@ -180,4 +194,17 @@ The `JWT_SECRET`, `JWT_ISSUER`, and `JWT_AUDIENCE` values must be identical betw
 
 ## Compose Develop Watch
 
-The `migration` service has a `develop.watch` configuration that triggers a rebuild when files in `./Migration` change. No other services have watch configs -- for live reload during development, services must be rebuilt manually (`docker compose up --build <service>`).
+`docker compose watch` support: `migration` rebuilds when `./Migration` changes; `client` syncs `./Client/src` and `index.html` into the container (Vite hot reload) and rebuilds on `package.json` changes. Other services must be rebuilt manually (`docker compose up --build <service>`).
+
+---
+
+## Running from prebuilt images
+
+`docker-compose.images.yaml` is an override that drops (`!reset`) the `build:` and `develop:` sections of the eight application services and points them at `${IMAGE_REGISTRY:-ghcr.io/totalbyte}/relativa-<service>:${IMAGE_TAG:-latest}`:
+
+```bash
+IMAGE_TAG=latest docker compose -f docker-compose.yaml -f docker-compose.images.yaml pull
+IMAGE_TAG=latest docker compose -f docker-compose.yaml -f docker-compose.images.yaml up -d
+```
+
+CI uses the same override for the E2E and load jobs after `docker load`-ing the images built earlier in the run. Image names, tags, and the publish rules are described in [CI-PIPELINE.md](CI-PIPELINE.md).

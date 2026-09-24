@@ -1,7 +1,9 @@
-using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
+
 using NSubstitute;
+
 using Relativa.Graph.Hubs;
+
 using Xunit;
 
 namespace Relativa.Graph.Integration.Tests;

@@ -1,11 +1,15 @@
 using System.Text.Json;
-using DotNet.Testcontainers.Builders;
+
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Authentication.Infrastructure.Data;
 using Relativa.Authentication.Infrastructure.Services.Audit;
 using Relativa.Persistence.Contracts;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Authentication.Application.Tests;
@@ -17,7 +21,6 @@ public sealed class OutboxWriterIntegrationTests : IAsyncLifetime
         .WithDatabase("auth_outbox_test")
         .WithUsername("relativa")
         .WithPassword("test")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
         .Build();
 
     private DbContextOptions<AuthDbContext> _opts = null!;

@@ -1,10 +1,13 @@
-using DotNet.Testcontainers.Builders;
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Core.Infrastructure.Data;
 using Relativa.Core.Infrastructure.Repositories;
 using Relativa.Persistence.Entities;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Core.Integration.Tests;
@@ -16,7 +19,6 @@ public sealed class SettingsRepositoryIntegrationTests : IAsyncLifetime
         .WithDatabase("settings_test")
         .WithUsername("relativa")
         .WithPassword("test")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
         .Build();
 
     private DbContextOptions<RelativaDbContext> _opts = null!;

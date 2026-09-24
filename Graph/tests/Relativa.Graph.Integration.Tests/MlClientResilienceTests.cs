@@ -1,9 +1,13 @@
 using FluentAssertions;
-using Microsoft.Extensions.Options;
-using NSubstitute;
+
 using Microsoft.Extensions.Logging;
-using Relativa.Graph.ML;
+using Microsoft.Extensions.Options;
+
+using NSubstitute;
+
 using Relativa.Graph.Messaging;
+using Relativa.Graph.ML;
+
 using Xunit;
 
 namespace Relativa.Graph.Integration.Tests;

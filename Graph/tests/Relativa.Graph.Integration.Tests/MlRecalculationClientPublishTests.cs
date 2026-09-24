@@ -1,15 +1,21 @@
 using System.Text;
 using System.Text.Json;
-using DotNet.Testcontainers.Builders;
+
 using FluentAssertions;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
 using NSubstitute;
+
 using RabbitMQ.Client;
-using Relativa.Graph.ML;
+
 using Relativa.Graph.Messaging;
+using Relativa.Graph.ML;
 using Relativa.Persistence.Contracts;
+
 using Testcontainers.RabbitMq;
+
 using Xunit;
 
 namespace Relativa.Graph.Integration.Tests;
@@ -69,7 +75,10 @@ public sealed class MlRecalculationClientPublishTests : IAsyncLifetime
         while (got is null && DateTimeOffset.UtcNow < deadline)
         {
             got = await _channel.BasicGetAsync(Queue, autoAck: true);
-            if (got is null) await Task.Delay(200);
+            if (got is null)
+            {
+                await Task.Delay(200);
+            }
         }
 
         got.Should().NotBeNull("the recalculation client must publish a message routed to ml.recalculate.*");

@@ -1,6 +1,6 @@
+import uuid
 from datetime import date
 from unittest.mock import patch
-import uuid
 
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory
@@ -34,16 +34,21 @@ class ScoreBatchTests(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_rejects_non_integer_ids(self):
-        request = self.factory.post("/api/ml/score/batch", {"entity_ids": [1, "x"]}, format="json")
+        request = self.factory.post(
+            "/api/ml/score/batch", {"entity_ids": [1, "x"]}, format="json"
+        )
         response = score_batch(request)
         self.assertEqual(response.status_code, 400)
 
     def test_returns_503_when_models_missing(self):
         MlApiConfig.closure_model = None
-        request = self.factory.post("/api/ml/score/batch", {"entity_ids": [1]}, format="json")
+        request = self.factory.post(
+            "/api/ml/score/batch", {"entity_ids": [1]}, format="json"
+        )
         response = score_batch(request)
         self.assertEqual(response.status_code, 503)
 
+    @patch("ml_api.views._load_client_inputs")
     @patch("ml_api.views._load_contract_inputs")
     @patch("ml_api.views._load_deal_inputs")
     @patch("ml_api.views._load_analysis_state")
@@ -56,6 +61,7 @@ class ScoreBatchTests(TestCase):
         analysis_mock,
         deal_mock,
         contract_mock,
+        client_mock,
     ):
         schema_mock.return_value = {"type_ids": {}, "rel_ids": {}, "prop_ids": {}}
         ensure_mock.return_value = None
@@ -74,10 +80,17 @@ class ScoreBatchTests(TestCase):
                 }
             }
         ]
-        deal_mock.return_value = {}
+        # Scoring needs a created date and a known status on the deal itself;
+        # deal_value matches the stored average so the analysis is not stale.
+        deal_mock.return_value = {
+            101: {"created_at": date.today(), "status": "pending", "deal_value": 1500.0}
+        }
         contract_mock.return_value = []
+        client_mock.return_value = {}
 
-        request = self.factory.post("/api/ml/score/batch", {"entity_ids": [101]}, format="json")
+        request = self.factory.post(
+            "/api/ml/score/batch", {"entity_ids": [101]}, format="json"
+        )
         response = score_batch(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data[0]["entity_id"], 101)
@@ -104,12 +117,16 @@ class ScoreBatchTests(TestCase):
         deal_mock.return_value = {}
         contract_mock.return_value = []
 
-        request = self.factory.post("/api/ml/score/batch", {"entity_ids": [999]}, format="json")
+        request = self.factory.post(
+            "/api/ml/score/batch", {"entity_ids": [999]}, format="json"
+        )
         response = score_batch(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data[0]["closure_score"], None)
         self.assertEqual(response.data[0]["churn_score"], None)
-        self.assertIn("analysis has not been computed", response.data[0]["unavailable_reason"])
+        self.assertIn(
+            "analysis has not been computed", response.data[0]["unavailable_reason"]
+        )
 
     @patch("ml_api.views._load_contract_inputs")
     @patch("ml_api.views._load_deal_inputs")
@@ -144,7 +161,9 @@ class ScoreBatchTests(TestCase):
         deal_mock.return_value = {42: {"created_at": date.today(), "status": None}}
         contract_mock.return_value = []
 
-        request = self.factory.post("/api/ml/score/batch", {"entity_ids": [42]}, format="json")
+        request = self.factory.post(
+            "/api/ml/score/batch", {"entity_ids": [42]}, format="json"
+        )
         response = score_batch(request)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data[0]["closure_score"], None)
@@ -214,14 +233,18 @@ class ScoreBatchTests(TestCase):
             }
         }
 
-        request = self.factory.post("/api/ml/score/batch", {"entity_ids": [77]}, format="json")
+        request = self.factory.post(
+            "/api/ml/score/batch", {"entity_ids": [77]}, format="json"
+        )
         response = score_batch(request)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(recompute_mock.called)
 
     @patch("ml_api.views._load_schema_config")
     def test_timeout_returns_504(self, _schema_mock):
-        request = self.factory.post("/api/ml/score/batch", {"entity_ids": [1]}, format="json")
+        request = self.factory.post(
+            "/api/ml/score/batch", {"entity_ids": [1]}, format="json"
+        )
         with patch("ml_api.views._check_deadline", side_effect=TimeoutError()):
             response = score_batch(request)
         self.assertEqual(response.status_code, 504)
@@ -234,7 +257,9 @@ class RecalculateEndpointTests(TestCase):
     @patch("ml_api.views.enqueue_recalculation_job")
     def test_accepts_entity_ids_mode(self, enqueue_mock):
         enqueue_mock.return_value = uuid.uuid4()
-        request = self.factory.post("/api/ml/recalculate/", {"entity_ids": [3, 4, 4]}, format="json")
+        request = self.factory.post(
+            "/api/ml/recalculate/", {"entity_ids": [3, 4, 4]}, format="json"
+        )
         response = recalculate(request)
         self.assertEqual(response.status_code, 202)
         self.assertEqual(response.data["scope"], "entity_ids")

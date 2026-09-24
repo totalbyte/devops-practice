@@ -1,15 +1,18 @@
-using DotNet.Testcontainers.Builders;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+
 using NSubstitute;
+
 using Relativa.Graph.Data;
 using Relativa.Graph.ML;
 using Relativa.Persistence.Entities;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Graph.Integration.Tests;
@@ -21,7 +24,6 @@ public sealed class GraphApiFactory : WebApplicationFactory<Program>, IAsyncLife
         .WithDatabase("graph_api_test")
         .WithUsername("relativa")
         .WithPassword("test")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
         .Build();
 
     public int OrgId { get; private set; }

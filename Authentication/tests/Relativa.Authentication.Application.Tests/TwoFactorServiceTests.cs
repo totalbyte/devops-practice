@@ -1,15 +1,19 @@
 using System.Security.Cryptography;
 using System.Text;
+
 using FluentAssertions;
-using Microsoft.Extensions.Options;
-using static Microsoft.Extensions.Options.Options;
+
 using Moq;
+
 using Relativa.Authentication.Application.Exceptions;
 using Relativa.Authentication.Application.Options;
 using Relativa.Authentication.Application.Services;
 using Relativa.Authentication.Domain.Interfaces;
 using Relativa.Persistence.Entities;
+
 using Xunit;
+
+using static Microsoft.Extensions.Options.Options;
 
 namespace Relativa.Authentication.Application.Tests;
 

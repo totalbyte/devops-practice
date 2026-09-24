@@ -1,10 +1,13 @@
-using DotNet.Testcontainers.Builders;
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Core.Infrastructure.Data;
 using Relativa.Core.Infrastructure.Repositories;
 using Relativa.Persistence.Entities;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Core.Integration.Tests;
@@ -14,7 +17,7 @@ public sealed class EntityRelationshipRepositoryIntegrationTests : IAsyncLifetim
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
         .WithImage("postgres:16-alpine").WithDatabase("entity_rel_test")
         .WithUsername("relativa").WithPassword("test")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432)).Build();
+        .Build();
 
     private DbContextOptions<RelativaDbContext> _opts = null!;
     private int _dealTypeId, _clientTypeId, _relTypeId, _deal1, _client1, _client2, _wsId;
@@ -75,7 +78,9 @@ public sealed class EntityRelationshipRepositoryIntegrationTests : IAsyncLifetim
         await using var db = Db();
         var rel = await Sut(db).AddRelationshipAsync(new EntityRelationship
         {
-            SourceEntityId = sourceId, TargetEntityId = targetId, RelationshipTypeId = _relTypeId,
+            SourceEntityId = sourceId,
+            TargetEntityId = targetId,
+            RelationshipTypeId = _relTypeId,
         });
         return rel.Id;
     }

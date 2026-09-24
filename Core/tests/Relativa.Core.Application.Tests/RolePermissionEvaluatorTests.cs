@@ -1,6 +1,8 @@
 using FluentAssertions;
+
 using Relativa.Core.Application.Authorization;
 using Relativa.Persistence.Entities;
+
 using Xunit;
 
 namespace Relativa.Core.Application.Tests;

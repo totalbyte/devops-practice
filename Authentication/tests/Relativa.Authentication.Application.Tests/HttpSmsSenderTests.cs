@@ -1,11 +1,15 @@
 using FluentAssertions;
+
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using static Microsoft.Extensions.Options.Options;
+
 using Moq;
+
 using Relativa.Authentication.Application.Options;
 using Relativa.Authentication.Infrastructure.Services;
+
 using Xunit;
+
+using static Microsoft.Extensions.Options.Options;
 
 namespace Relativa.Authentication.Application.Tests;
 

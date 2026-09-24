@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Persistence;
 using Relativa.Persistence.Entities;
 using Relativa.Persistence.Entities.AuditLogs;
-using Relativa.Persistence.Configurations;
 
 namespace Relativa.Core.Infrastructure.Data;
 

@@ -1,6 +1,7 @@
 using FluentAssertions;
-using Microsoft.Extensions.Options;
+
 using Relativa.Authentication.Application.Options;
+
 using Xunit;
 
 namespace Relativa.Authentication.Application.Tests;

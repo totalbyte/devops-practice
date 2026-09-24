@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+
 using Relativa.Core.Domain.Interfaces;
 using Relativa.Core.Infrastructure.Data;
 using Relativa.Persistence.Entities;
@@ -23,7 +24,9 @@ public sealed class UserRoleWorkspaceRepository(RelativaDbContext db) : IUserRol
         CancellationToken ct = default)
     {
         if (userIds.Count == 0)
+        {
             return new Dictionary<int, int>();
+        }
 
         return await db.UserRoleWorkspaces
             .AsNoTracking()

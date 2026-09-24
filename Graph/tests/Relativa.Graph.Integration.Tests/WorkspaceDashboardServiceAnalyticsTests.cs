@@ -1,13 +1,17 @@
-using DotNet.Testcontainers.Builders;
-using Microsoft.Extensions.Caching.Memory;
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+
 using NSubstitute;
+
 using Relativa.Graph.Dashboard;
 using Relativa.Graph.Data;
 using Relativa.Graph.ML;
 using Relativa.Persistence.Entities;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Graph.Integration.Tests;
@@ -17,7 +21,7 @@ public sealed class WorkspaceDashboardServiceAnalyticsTests : IAsyncLifetime
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
         .WithImage("postgres:16-alpine").WithDatabase("ws_analytics_test")
         .WithUsername("relativa").WithPassword("test")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432)).Build();
+        .Build();
 
     private GraphQueryDbContext _db = null!;
     private WorkspaceDashboardService _svc = null!;
@@ -101,7 +105,9 @@ public sealed class WorkspaceDashboardServiceAnalyticsTests : IAsyncLifetime
 
         var relType = new EntityRelationshipType
         {
-            Name = "deal_client", SourceEntityTypeId = dealType.Id, TargetEntityTypeId = clientType.Id,
+            Name = "deal_client",
+            SourceEntityTypeId = dealType.Id,
+            TargetEntityTypeId = clientType.Id,
             RelationshipCardinality = RelationshipCardinality.ManyToOne,
         };
         _db.EntityRelationshipTypes.Add(relType);

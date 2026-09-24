@@ -1,0 +1,44 @@
+# Runs the stack from prebuilt images instead of building them locally.
+# Used by CI (E2E / load jobs) and to verify images published to GHCR:
+#
+#   IMAGE_TAG=latest docker compose -f docker-compose.yaml -f docker-compose.images.yaml pull
+#   IMAGE_TAG=latest docker compose -f docker-compose.yaml -f docker-compose.images.yaml up -d
+#
+# IMAGE_REGISTRY defaults to this repository's GHCR namespace; IMAGE_TAG is
+# `latest` (main) or `sha-<7 chars of the commit>` for any pushed commit.
+# `!reset` drops the `build:` / `develop:` sections from docker-compose.yaml.
+services:
+  gateway:
+    image: ${IMAGE_REGISTRY:-ghcr.io/totalbyte}/relativa-gateway:${IMAGE_TAG:-latest}
+    pull_policy: missing
+    build: !reset null
+  auth:
+    image: ${IMAGE_REGISTRY:-ghcr.io/totalbyte}/relativa-auth:${IMAGE_TAG:-latest}
+    pull_policy: missing
+    build: !reset null
+  core:
+    image: ${IMAGE_REGISTRY:-ghcr.io/totalbyte}/relativa-core:${IMAGE_TAG:-latest}
+    pull_policy: missing
+    build: !reset null
+  graph:
+    image: ${IMAGE_REGISTRY:-ghcr.io/totalbyte}/relativa-graph:${IMAGE_TAG:-latest}
+    pull_policy: missing
+    build: !reset null
+  audit:
+    image: ${IMAGE_REGISTRY:-ghcr.io/totalbyte}/relativa-audit:${IMAGE_TAG:-latest}
+    pull_policy: missing
+    build: !reset null
+  migration:
+    image: ${IMAGE_REGISTRY:-ghcr.io/totalbyte}/relativa-migration:${IMAGE_TAG:-latest}
+    pull_policy: missing
+    build: !reset null
+    develop: !reset null
+  ml:
+    image: ${IMAGE_REGISTRY:-ghcr.io/totalbyte}/relativa-ml:${IMAGE_TAG:-latest}
+    pull_policy: missing
+    build: !reset null
+  client:
+    image: ${IMAGE_REGISTRY:-ghcr.io/totalbyte}/relativa-client:${IMAGE_TAG:-latest}
+    pull_policy: missing
+    build: !reset null
+    develop: !reset null

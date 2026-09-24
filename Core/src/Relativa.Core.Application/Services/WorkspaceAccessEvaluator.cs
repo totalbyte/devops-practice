@@ -1,6 +1,6 @@
+using Relativa.Core.Application.Authorization;
 using Relativa.Core.Application.Exceptions;
 using Relativa.Core.Application.Interfaces;
-using Relativa.Core.Application.Authorization;
 using Relativa.Core.Domain.Interfaces;
 using Relativa.Persistence.Entities;
 
@@ -19,14 +19,20 @@ public sealed class WorkspaceAccessEvaluator(
     {
         var workspace = await workspaceRepository.GetByIdAsync(workspaceId, ct);
         if (workspace is null)
+        {
             return false;
+        }
 
         var orgM = await orgMemberRepository.GetAsync(userId, workspace.OrganizationId, ct);
         if (orgM?.Role is null)
+        {
             return false;
+        }
 
         if (string.Equals(orgM.Role.Name, OrgOwnerRoleName, StringComparison.Ordinal))
+        {
             return true;
+        }
 
         var allPermissionNames = await GetAllActivePermissionNamesAsync(ct);
         return RolePermissionEvaluator.HasAllPermissions(orgM.Role, allPermissionNames);
@@ -36,9 +42,15 @@ public sealed class WorkspaceAccessEvaluator(
     {
         var m = await memberRepository.GetAsync(userId, workspaceId, ct);
         if (m is not null)
+        {
             return;
+        }
+
         if (await IsOrgOwnerOfWorkspaceAsync(userId, workspaceId, ct))
+        {
             return;
+        }
+
         throw new AppException("not_ws_member", 403, "You are not a member of this workspace.");
     }
 
@@ -51,7 +63,9 @@ public sealed class WorkspaceAccessEvaluator(
         await EnsureCanAccessWorkspaceAsync(userId, workspaceId, ct);
 
         if (await IsOrgOwnerOfWorkspaceAsync(userId, workspaceId, ct))
+        {
             return true;
+        }
 
         var m = await memberRepository.GetAsync(userId, workspaceId, ct);
         return m?.Role?.RolePermissions
@@ -66,9 +80,11 @@ public sealed class WorkspaceAccessEvaluator(
         await EnsureCanAccessWorkspaceAsync(userId, workspaceId, ct);
 
         if (await IsOrgOwnerOfWorkspaceAsync(userId, workspaceId, ct))
+        {
             return WorkspacePermissions.FullWorkspaceAuthority
                 .OrderBy(p => p, StringComparer.Ordinal)
                 .ToList();
+        }
 
         var m = await memberRepository.GetAsync(userId, workspaceId, ct);
         return MapRolePermissionNames(m);
@@ -93,7 +109,10 @@ public sealed class WorkspaceAccessEvaluator(
                 OrganizationPermissions.DeleteOrgUsers
             };
             foreach (var permissionName in WorkspacePermissions.FullWorkspaceAuthority)
+            {
                 fallback.Add(permissionName);
+            }
+
             return fallback;
         }
 
@@ -108,7 +127,9 @@ public sealed class WorkspaceAccessEvaluator(
     private static IReadOnlyList<string> MapRolePermissionNames(UserRoleWorkspace? membership)
     {
         if (membership?.Role?.RolePermissions is null)
+        {
             return [];
+        }
 
         return membership.Role.RolePermissions
             .Select(rp => rp.Permission?.Name)

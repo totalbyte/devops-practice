@@ -1,4 +1,3 @@
-using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 
 namespace Relativa.Graph.ML;
@@ -19,7 +18,9 @@ public sealed class HttpMlScoringClient(HttpClient http, ILogger<HttpMlScoringCl
         CancellationToken ct = default)
     {
         if (dealEntityIds.Count == 0)
+        {
             return new Dictionary<int, MlScoreDto>();
+        }
 
         try
         {
@@ -36,7 +37,9 @@ public sealed class HttpMlScoringClient(HttpClient http, ILogger<HttpMlScoringCl
 
             var items = await response.Content.ReadFromJsonAsync<List<ScoreBatchItem>>(ct);
             if (items is null)
+            {
                 return new Dictionary<int, MlScoreDto>();
+            }
 
             return items.ToDictionary(
                 i => i.EntityId,

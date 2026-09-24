@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using System.Text;
-using DotNet.Testcontainers.Builders;
+
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -9,8 +9,11 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+
 using Relativa.Audit.Infrastructure.Data;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Audit.Integration.Tests;
@@ -26,7 +29,6 @@ public sealed class AuditApiFactory : WebApplicationFactory<Program>, IAsyncLife
         .WithDatabase("audit_api_test")
         .WithUsername("relativa")
         .WithPassword("test")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
         .Build();
 
     public async Task InitializeAsync()

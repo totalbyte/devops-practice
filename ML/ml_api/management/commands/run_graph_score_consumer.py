@@ -9,8 +9,6 @@ from django.core.management.base import BaseCommand
 from ml_api.apps import MlApiConfig
 from ml_api.recalculate_service import (
     BATCH_TIMEOUT_SECONDS,
-    normalize_entity_ids,
-    recompute_deal_analysis,
     _check_deadline,
     _ensure_deal_analysis_entities,
     _load_analysis_state,
@@ -18,6 +16,8 @@ from ml_api.recalculate_service import (
     _load_contract_inputs,
     _load_deal_inputs,
     _load_schema_config,
+    normalize_entity_ids,
+    recompute_deal_analysis,
 )
 from ml_api.views import _needs_analysis_refresh, _persist_scores, _score_or_diagnose
 
@@ -36,7 +36,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         logging.basicConfig(level=logging.INFO)
-        credentials = pika.PlainCredentials(settings.RABBITMQ_USER, settings.RABBITMQ_PASSWORD)
+        credentials = pika.PlainCredentials(
+            settings.RABBITMQ_USER, settings.RABBITMQ_PASSWORD
+        )
         parameters = pika.ConnectionParameters(
             host=settings.RABBITMQ_HOST,
             port=settings.RABBITMQ_PORT,
@@ -46,8 +48,12 @@ class Command(BaseCommand):
         conn = pika.BlockingConnection(parameters)
         channel = conn.channel()
 
-        channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type=EXCHANGE_TYPE, durable=True)
-        channel.exchange_declare(exchange=DLX_NAME, exchange_type="fanout", durable=True)
+        channel.exchange_declare(
+            exchange=EXCHANGE_NAME, exchange_type=EXCHANGE_TYPE, durable=True
+        )
+        channel.exchange_declare(
+            exchange=DLX_NAME, exchange_type="fanout", durable=True
+        )
         channel.queue_declare(queue=DLQ_NAME, durable=True)
         channel.queue_bind(exchange=DLX_NAME, queue=DLQ_NAME, routing_key="")
         channel.queue_declare(
@@ -55,7 +61,9 @@ class Command(BaseCommand):
             durable=True,
             arguments={"x-dead-letter-exchange": DLX_NAME},
         )
-        channel.queue_bind(exchange=EXCHANGE_NAME, queue=QUEUE_NAME, routing_key=ROUTING_KEY)
+        channel.queue_bind(
+            exchange=EXCHANGE_NAME, queue=QUEUE_NAME, routing_key=ROUTING_KEY
+        )
         channel.basic_qos(prefetch_count=4)
 
         def on_message(ch, method_frame, properties, body):
@@ -94,13 +102,21 @@ class Command(BaseCommand):
                 scores = _run_scoring(entity_ids)
                 reply({"scores": scores, "errorMessage": None})
             except Exception:
-                logger.exception("Graph score RPC scoring failed for entity_ids=%s", entity_ids)
+                logger.exception(
+                    "Graph score RPC scoring failed for entity_ids=%s", entity_ids
+                )
                 reply({"scores": [], "errorMessage": "Internal scoring error."})
 
             ch.basic_ack(delivery_tag=method_frame.delivery_tag)
 
-        channel.basic_consume(queue=QUEUE_NAME, on_message_callback=on_message, auto_ack=False)
-        self.stdout.write(self.style.SUCCESS(f"ML graph score RPC consumer listening on {QUEUE_NAME}."))
+        channel.basic_consume(
+            queue=QUEUE_NAME, on_message_callback=on_message, auto_ack=False
+        )
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"ML graph score RPC consumer listening on {QUEUE_NAME}."
+            )
+        )
         channel.start_consuming()
 
 
@@ -111,7 +127,12 @@ def _run_scoring(entity_ids: list[int]) -> list[dict]:
 
     if (MlApiConfig.churn_model is None) or (MlApiConfig.closure_model is None):
         return [
-            {"entityId": eid, "closureScore": None, "churnScore": None, "unavailableReason": "ML models not loaded."}
+            {
+                "entityId": eid,
+                "closureScore": None,
+                "churnScore": None,
+                "unavailableReason": "ML models not loaded.",
+            }
             for eid in entity_ids
         ]
 
@@ -133,7 +154,11 @@ def _run_scoring(entity_ids: list[int]) -> list[dict]:
     client_rows = _load_client_inputs(entity_ids, config)
     _check_deadline(deadline)
 
-    from ml_api.recalculate_service import ANALYSIS_PROP_SOURCE_UPDATED_AT, ANALYSIS_PROP_CALCULATED_AT
+    from ml_api.recalculate_service import (
+        ANALYSIS_PROP_CALCULATED_AT,
+        ANALYSIS_PROP_SOURCE_UPDATED_AT,
+    )
+
     results_by_id: dict[int, dict] = {}
     stale_analysis_ids: list[int] = []
 
@@ -150,7 +175,11 @@ def _run_scoring(entity_ids: list[int]) -> list[dict]:
 
         source_updated_at = analysis.get(ANALYSIS_PROP_SOURCE_UPDATED_AT)
         calculated_at = analysis.get(ANALYSIS_PROP_CALCULATED_AT)
-        if calculated_at is None or source_updated_at is None or calculated_at < source_updated_at:
+        if (
+            calculated_at is None
+            or source_updated_at is None
+            or calculated_at < source_updated_at
+        ):
             stale_analysis_ids.append(deal_id)
             continue
 

@@ -1,13 +1,17 @@
-using DotNet.Testcontainers.Builders;
-using Microsoft.Extensions.Caching.Memory;
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+
 using NSubstitute;
+
 using Relativa.Graph.Dashboard;
 using Relativa.Graph.Data;
 using Relativa.Graph.ML;
 using Relativa.Persistence.Entities;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Graph.Integration.Tests;
@@ -17,7 +21,7 @@ public sealed class WorkspaceDashboardServiceTrendsTests : IAsyncLifetime
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
         .WithImage("postgres:16-alpine").WithDatabase("ws_trends_test")
         .WithUsername("relativa").WithPassword("test")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432)).Build();
+        .Build();
 
     private GraphQueryDbContext _db = null!;
     private IMlRecalculationClient _mlRecalc = null!;
@@ -93,7 +97,9 @@ public sealed class WorkspaceDashboardServiceTrendsTests : IAsyncLifetime
 
         var analysisRel = new EntityRelationshipType
         {
-            Name = "deal_analysis", SourceEntityTypeId = dealType.Id, TargetEntityTypeId = analysisType.Id,
+            Name = "deal_analysis",
+            SourceEntityTypeId = dealType.Id,
+            TargetEntityTypeId = analysisType.Id,
             RelationshipCardinality = RelationshipCardinality.OneToOne,
         };
         _db.EntityRelationshipTypes.Add(analysisRel);
@@ -115,7 +121,10 @@ public sealed class WorkspaceDashboardServiceTrendsTests : IAsyncLifetime
             new EntityPropertyValue { EntityId = e.Id, PropertyId = _prop["deal_value"], ValueDecimal = value },
             new EntityPropertyValue { EntityId = e.Id, PropertyId = _prop["title"], ValueString = $"Deal {status}" });
         if (close is not null)
+        {
             _db.EntityPropertyValues.Add(new EntityPropertyValue { EntityId = e.Id, PropertyId = _prop["expected_close"], ValueDate = close });
+        }
+
         await _db.SaveChangesAsync();
         return e.Id;
     }

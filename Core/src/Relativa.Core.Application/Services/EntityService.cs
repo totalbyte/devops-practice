@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text.Json;
+
 using FluentValidation;
+
 using Relativa.Core.Application.DTOs.Entity;
 using Relativa.Core.Application.Exceptions;
 using Relativa.Core.Application.Interfaces;
@@ -73,10 +75,14 @@ public sealed class EntityService(
 
         var typeProperties = await entityRepository.GetTypePropertiesAsync(request.EntityTypeId, ct);
         if (typeProperties.Count == 0)
+        {
             throw new AppException("entity_type_not_found", 404, $"Entity type {request.EntityTypeId} does not exist or has no properties defined.");
+        }
 
         if (typeProperties.All(tp => tp.Property.IsReadonly))
+        {
             throw new AppException("entity_type_all_readonly", 400, $"Entity type {request.EntityTypeId} cannot be created: all properties are read-only.");
+        }
 
         ValidatePropertyPayload(request.Properties, typeProperties);
 
@@ -95,7 +101,9 @@ public sealed class EntityService(
                     ?? throw new AppException("target_entity_not_found", 400, $"Target entity {link.TargetEntityId} was not found in this workspace.");
 
                 if (target.EntityTypeId != rt.TargetEntityTypeId)
+                {
                     throw new AppException("target_entity_wrong_type", 400, $"Target entity {link.TargetEntityId} has the wrong entity type for relationship '{rt.Name}'.");
+                }
 
                 if (!seenByType.TryGetValue(rt.Id, out var seenTargets))
                 {
@@ -108,7 +116,9 @@ public sealed class EntityService(
                 }
 
                 if (!seenTargets.Add(target.Id))
+                {
                     throw new AppException("duplicate_relationship_link", 400, $"Duplicate link: entity {target.Id} via '{rt.Name}' appears more than once in the request.");
+                }
 
                 relationshipRows.Add(new EntityRelationship
                 {
@@ -123,7 +133,9 @@ public sealed class EntityService(
         foreach (var req in outgoingTypes.Where(t => t.IsRequired))
         {
             if (!linkTypeIds.Contains(req.Id))
+            {
                 throw new AppException("required_relationship_missing", 400, $"Required relationship '{req.Name}' is missing.");
+            }
         }
 
         var entity = new Entity { EntityTypeId = request.EntityTypeId, CreatedByUserId = userId, IsArchived = false };
@@ -232,7 +244,9 @@ public sealed class EntityService(
 
         var typeProps = await entityRepository.GetTypePropertiesAsync(entity.EntityTypeId, ct);
         if (typeProps.Count > 0 && typeProps.All(tp => tp.Property.IsReadonly))
+        {
             throw new AppException("entity_all_readonly_delete", 400, "Cannot delete an entity whose properties are all read-only.");
+        }
 
         await entityRepository.ArchiveAsync(entity.Id, ct);
 
@@ -271,14 +285,19 @@ public sealed class EntityService(
     private async Task RequirePermission(int userId, int workspaceId, string permission, CancellationToken ct)
     {
         if (!await workspaceAccess.HasWorkspacePermissionAsync(userId, workspaceId, permission, ct))
+        {
             throw new AppException("permission_denied", 403, $"You do not have the '{permission}' permission in this workspace.");
+        }
     }
 
     private async Task<UserRoleWorkspace> GetMembershipOrThrowAsync(int userId, int workspaceId, CancellationToken ct)
     {
         var membership = await memberRepository.GetAsync(userId, workspaceId, ct);
         if (membership?.Role is null)
+        {
             throw new AppException("access_denied", 403, "Access denied");
+        }
+
         return membership;
     }
 
@@ -289,14 +308,21 @@ public sealed class EntityService(
         int workspaceId,
         CancellationToken ct)
     {
-        if (raw is null or { Count: 0 }) return [];
+        if (raw is null or { Count: 0 })
+        {
+            return [];
+        }
 
         if (entityTypeId is null)
+        {
             throw new AppException("entity_type_required_for_filters", 400, "entityTypeId is required when filters are specified.");
+        }
 
         var typeProps = await entityRepository.GetTypePropertiesAsync(entityTypeId.Value, ct);
         if (typeProps.Count == 0)
+        {
             throw new AppException("entity_type_not_found", 404, $"Entity type {entityTypeId} does not exist or has no properties defined.");
+        }
 
         var propMap = typeProps.ToDictionary(tp => tp.PropertyId, tp => tp.Property);
         var hasViewAnalytics = await workspaceAccess.HasWorkspacePermissionAsync(userId, workspaceId, "view_analytics", ct);
@@ -305,10 +331,14 @@ public sealed class EntityService(
         foreach (var f in raw)
         {
             if (!propMap.TryGetValue(f.PropertyId, out var prop))
+            {
                 throw new AppException("property_not_in_entity_type", 400, $"Property {f.PropertyId} does not belong to entity type {entityTypeId}.");
+            }
 
             if (prop.IsReadonly && !hasViewAnalytics)
+            {
                 continue;
+            }
 
             resolved.Add(ResolveFilter(f, prop));
         }
@@ -317,14 +347,14 @@ public sealed class EntityService(
 
     private static ResolvedFilterCondition ResolveFilter(EntityFilterCondition f, Property prop) => prop.DataType switch
     {
-        PropertyDataType.String  => new ResolvedFilterCondition(f.PropertyId, prop.DataType, f.Op, f.Value, null, null, null, null),
-        PropertyDataType.Int     => new ResolvedFilterCondition(f.PropertyId, prop.DataType, f.Op, null,
+        PropertyDataType.String => new ResolvedFilterCondition(f.PropertyId, prop.DataType, f.Op, f.Value, null, null, null, null),
+        PropertyDataType.Int => new ResolvedFilterCondition(f.PropertyId, prop.DataType, f.Op, null,
             int.TryParse(f.Value, out var i) ? i : throw new AppException("property_expects_integer", 400, $"Property '{prop.Name}' expects an integer filter value."), null, null, null),
         PropertyDataType.Decimal => new ResolvedFilterCondition(f.PropertyId, prop.DataType, f.Op, null, null,
             decimal.TryParse(f.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out var d) ? d : throw new AppException("property_expects_decimal", 400, $"Property '{prop.Name}' expects a decimal filter value."), null, null),
-        PropertyDataType.Bool    => new ResolvedFilterCondition(f.PropertyId, prop.DataType, f.Op, null, null, null,
+        PropertyDataType.Bool => new ResolvedFilterCondition(f.PropertyId, prop.DataType, f.Op, null, null, null,
             bool.TryParse(f.Value, out var b) ? b : throw new AppException("property_expects_boolean", 400, $"Property '{prop.Name}' expects a boolean filter value (true/false)."), null),
-        PropertyDataType.Date    => new ResolvedFilterCondition(f.PropertyId, prop.DataType, f.Op, null, null, null, null,
+        PropertyDataType.Date => new ResolvedFilterCondition(f.PropertyId, prop.DataType, f.Op, null, null, null, null,
             DateOnly.TryParseExact(f.Value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt) ? dt : throw new AppException("property_expects_date", 400, $"Property '{prop.Name}' expects a date filter value in yyyy-MM-dd format.")),
         _ => throw new AppException("unsupported_filter_data_type", 400, $"Unsupported data type '{prop.DataType}' for filter on property '{prop.Name}'.")
     };
@@ -332,7 +362,9 @@ public sealed class EntityService(
     private async Task EnsureCanAccessEntityAsync(int userId, int workspaceId, Entity entity, CancellationToken ct)
     {
         if (entity.CreatedByUserId == userId)
+        {
             return;
+        }
 
         var userIds = new[] { userId, entity.CreatedByUserId };
         var priorities = await memberRepository.GetRolePrioritiesByUserIdsAsync(workspaceId, userIds, ct);
@@ -344,7 +376,9 @@ public sealed class EntityService(
 
         // Lower priority value means higher authority.
         if (callerPriority >= creatorPriority)
+        {
             throw new AppException("access_denied", 403, "Access denied");
+        }
     }
 
     /// <summary>
@@ -358,11 +392,15 @@ public sealed class EntityService(
 
         var duplicates = request.GroupBy(p => p.PropertyId).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
         if (duplicates.Count > 0)
+        {
             throw new AppException("duplicate_property_ids", 400, $"Duplicate property ids in request: {string.Join(", ", duplicates)}.");
+        }
 
         var unknown = request.Select(p => p.PropertyId).Except(allowedIds).ToList();
         if (unknown.Count > 0)
+        {
             throw new AppException("properties_not_in_entity_type", 400, $"Properties {string.Join(", ", unknown)} do not belong to this entity type.");
+        }
     }
 
     /// <summary>
@@ -381,9 +419,13 @@ public sealed class EntityService(
         foreach (var id in mergedIds)
         {
             if (reqById.TryGetValue(id, out var requested))
+            {
                 result.Add(new PropertyValueInput(id, requested));
+            }
             else if (existingStrings.TryGetValue(id, out var kept))
+            {
                 result.Add(new PropertyValueInput(id, kept));
+            }
         }
 
         return result;
@@ -391,12 +433,12 @@ public sealed class EntityService(
 
     private static string? ValueToInputString(EntityPropertyValue pv) => pv.Property.DataType switch
     {
-        PropertyDataType.String  => pv.ValueString,
-        PropertyDataType.Int     => pv.ValueInt?.ToString(CultureInfo.InvariantCulture),
+        PropertyDataType.String => pv.ValueString,
+        PropertyDataType.Int => pv.ValueInt?.ToString(CultureInfo.InvariantCulture),
         PropertyDataType.Decimal => pv.ValueDecimal?.ToString(CultureInfo.InvariantCulture),
-        PropertyDataType.Bool    => pv.ValueBool?.ToString(),
-        PropertyDataType.Date    => pv.ValueDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-        _                        => null
+        PropertyDataType.Bool => pv.ValueBool?.ToString(),
+        PropertyDataType.Date => pv.ValueDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+        _ => null
     };
 
     private static void ValidateReadonlyPreserved(
@@ -408,13 +450,17 @@ public sealed class EntityService(
         {
             var mergedEntry = merged.FirstOrDefault(m => m.PropertyId == tp.PropertyId);
             if (mergedEntry is null)
+            {
                 continue;
+            }
 
             var mergedVal = mergedEntry.Value;
             var existing = entity.EntityPropertyValues.FirstOrDefault(e => e.PropertyId == tp.PropertyId);
             var existingStr = existing is null ? null : ValueToInputString(existing);
             if (!string.Equals(mergedVal, existingStr, StringComparison.Ordinal))
+            {
                 throw new AppException("property_read_only", 400, $"Property '{tp.Property.Name}' is read-only.");
+            }
         }
     }
 
@@ -434,11 +480,15 @@ public sealed class EntityService(
 
         var duplicates = submitted.GroupBy(p => p.PropertyId).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
         if (duplicates.Count > 0)
+        {
             throw new AppException("duplicate_property_ids", 400, $"Duplicate property ids submitted: {string.Join(", ", duplicates)}.");
+        }
 
         var unknown = submitted.Select(p => p.PropertyId).Except(allowedIds).ToList();
         if (unknown.Count > 0)
+        {
             throw new AppException("properties_not_in_entity_type", 400, $"Properties {string.Join(", ", unknown)} do not belong to this entity type.");
+        }
 
         var submittedIds = submitted.Where(p => p.Value is not null).Select(p => p.PropertyId).ToHashSet();
         var missingRequired = requiredIds.Except(submittedIds).ToList();
@@ -468,7 +518,9 @@ public sealed class EntityService(
         {
             var s = submitted.FirstOrDefault(x => x.PropertyId == tp.PropertyId);
             if (s?.Value is not null)
+            {
                 throw new AppException("property_read_only", 400, $"Property '{tp.Property.Name}' is read-only.");
+            }
         }
     }
 
@@ -486,7 +538,9 @@ public sealed class EntityService(
         foreach (var input in submitted.Where(p => p.Value is not null))
         {
             if (!propertyMap.TryGetValue(input.PropertyId, out var prop))
+            {
                 continue;
+            }
 
             var pv = new EntityPropertyValue { PropertyId = input.PropertyId };
 
@@ -496,7 +550,7 @@ public sealed class EntityService(
                     if (prop.AllowedValues.Count > 0
                         && !prop.AllowedValues.Any(av => string.Equals(av.Value, input.Value, StringComparison.OrdinalIgnoreCase)))
                     {
-                        throw new AppException("invalid_allowed_value", 400, 
+                        throw new AppException("invalid_allowed_value", 400,
                             $"'{input.Value}' is not a valid value for '{prop.Name}'. " +
                             $"Allowed: {string.Join(", ", prop.AllowedValues.Select(av => av.Value))}.");
                     }
@@ -505,7 +559,10 @@ public sealed class EntityService(
 
                 case PropertyDataType.Int:
                     if (!int.TryParse(input.Value, out var intVal))
+                    {
                         throw new AppException("property_expects_integer", 400, $"Property '{prop.Name}' expects an integer value.");
+                    }
+
                     pv.ValueInt = intVal;
                     break;
 
@@ -514,13 +571,19 @@ public sealed class EntityService(
                             System.Globalization.NumberStyles.Number,
                             System.Globalization.CultureInfo.InvariantCulture,
                             out var decVal))
+                    {
                         throw new AppException("property_expects_decimal", 400, $"Property '{prop.Name}' expects a decimal value.");
+                    }
+
                     pv.ValueDecimal = decVal;
                     break;
 
                 case PropertyDataType.Bool:
                     if (!bool.TryParse(input.Value, out var boolVal))
+                    {
                         throw new AppException("property_expects_boolean", 400, $"Property '{prop.Name}' expects a boolean value (true/false).");
+                    }
+
                     pv.ValueBool = boolVal;
                     break;
 
@@ -529,7 +592,10 @@ public sealed class EntityService(
                             System.Globalization.CultureInfo.InvariantCulture,
                             System.Globalization.DateTimeStyles.None,
                             out var dateVal))
+                    {
                         throw new AppException("property_expects_date", 400, $"Property '{prop.Name}' expects a date in yyyy-MM-dd format.");
+                    }
+
                     pv.ValueDate = dateVal;
                     break;
             }
@@ -616,12 +682,12 @@ public sealed class EntityService(
 
     private static object? ResolveValue(EntityPropertyValue pv) => pv.Property.DataType switch
     {
-        PropertyDataType.String  => pv.ValueString,
-        PropertyDataType.Int     => (object?)pv.ValueInt,
+        PropertyDataType.String => pv.ValueString,
+        PropertyDataType.Int => (object?)pv.ValueInt,
         PropertyDataType.Decimal => pv.ValueDecimal,
-        PropertyDataType.Bool    => pv.ValueBool,
-        PropertyDataType.Date    => pv.ValueDate?.ToString("yyyy-MM-dd"),
-        _                        => null
+        PropertyDataType.Bool => pv.ValueBool,
+        PropertyDataType.Date => pv.ValueDate?.ToString("yyyy-MM-dd"),
+        _ => null
     };
 
     public async Task<EntityRelationshipRefDto> CreateRelationshipAsync(int workspaceId, int userId, CreateEntityRelationshipRequest request, CancellationToken ct = default)
@@ -638,29 +704,41 @@ public sealed class EntityService(
             ?? throw new AppException("target_entity_not_found", 400, $"Target entity {request.TargetEntityId} not found in workspace {workspaceId}.");
 
         if (source.IsArchived || target.IsArchived)
+        {
             throw new AppException("relationship_archived_entity", 400, "Cannot create a relationship involving an archived entity.");
+        }
 
         var targetTypeProps = await entityRepository.GetTypePropertiesAsync(target.EntityTypeId, ct);
         if (targetTypeProps.Count > 0 && targetTypeProps.All(tp => tp.Property.IsReadonly))
+        {
             throw new AppException("entity_all_readonly_link", 400, "Cannot link an entity whose properties are all read-only.");
+        }
 
         if (source.EntityTypeId != relType.SourceEntityTypeId)
+        {
             throw new AppException("source_entity_wrong_type", 400, $"Source entity type does not match relationship type '{relType.Name}'.");
+        }
 
         if (target.EntityTypeId != relType.TargetEntityTypeId)
+        {
             throw new AppException("target_entity_wrong_type", 400, $"Target entity type does not match relationship type '{relType.Name}'.");
+        }
 
         if (relType.RelationshipCardinality == Persistence.Entities.RelationshipCardinality.ManyToOne
             || relType.RelationshipCardinality == Persistence.Entities.RelationshipCardinality.OneToOne)
         {
             if (await entityRepository.CountRelationshipsBySourceAsync(source.Id, relType.Id, ct) > 0)
+            {
                 throw new AppException("source_cardinality_violation", 400, $"Source entity already has a '{relType.Name}' link (cardinality constraint).");
+            }
         }
 
         if (relType.RelationshipCardinality == Persistence.Entities.RelationshipCardinality.OneToOne)
         {
             if (await entityRepository.CountRelationshipsByTargetAsync(target.Id, relType.Id, ct) > 0)
+            {
                 throw new AppException("target_cardinality_violation", 400, $"Target entity already has a '{relType.Name}' link (cardinality constraint).");
+            }
         }
 
         var rel = await entityRepository.AddRelationshipAsync(new Persistence.Entities.EntityRelationship
@@ -671,7 +749,9 @@ public sealed class EntityService(
         }, ct);
 
         if (relationshipNotifier is not null)
+        {
             await relationshipNotifier.NotifyChangedAsync(workspaceId, ct, source.Id, target.Id);
+        }
 
         const int previewCap = 12;
         return new EntityRelationshipRefDto(
@@ -693,27 +773,35 @@ public sealed class EntityService(
             ?? throw new AppException("relationship_not_found", 404, $"Relationship {relationshipId} not found.");
 
         if (!rel.SourceEntity.EntityWorkspaces.Any(ew => ew.WorkspaceId == workspaceId))
+        {
             throw new AppException("relationship_not_in_workspace", 403, "Relationship does not belong to an entity in this workspace.");
+        }
 
         if (rel.RelationshipType.IsRequired)
         {
             var remaining = await entityRepository.CountRelationshipsBySourceAsync(
                 rel.SourceEntityId, rel.RelationshipTypeId, ct);
             if (remaining <= 1)
-                throw new AppException("cannot_unlink_required_relationship", 400, 
+            {
+                throw new AppException("cannot_unlink_required_relationship", 400,
                     $"Cannot unlink: the entity requires at least one '{rel.RelationshipType.Name}' link.");
+            }
         }
 
         var targetTypeProps = await entityRepository.GetTypePropertiesAsync(rel.TargetEntity.EntityTypeId, ct);
         if (targetTypeProps.Count > 0 && targetTypeProps.All(tp => tp.Property.IsReadonly))
+        {
             throw new AppException("entity_all_readonly_unlink", 400, "Cannot unlink an entity whose properties are all read-only.");
+        }
 
         var sourceId = rel.SourceEntityId;
         var targetId = rel.TargetEntityId;
         await entityRepository.RemoveRelationshipAsync(relationshipId, ct);
 
         if (relationshipNotifier is not null)
+        {
             await relationshipNotifier.NotifyChangedAsync(workspaceId, ct, sourceId, targetId);
+        }
     }
 
     public async Task<EntityRelationshipRefDto> ReassignRelationshipAsync(
@@ -723,7 +811,9 @@ public sealed class EntityService(
         await RequirePermission(userId, workspaceId, "edit_entities", ct);
 
         if ((request.NewSourceEntityId == null) == (request.NewTargetEntityId == null))
+        {
             throw new AppException("relink_exactly_one_endpoint", 400, "Exactly one of NewSourceEntityId or NewTargetEntityId must be provided.");
+        }
 
         var rel = await entityRepository.GetRelationshipByIdAsync(relationshipId, ct)
             ?? throw new AppException("relationship_not_found", 404, $"Relationship {relationshipId} not found.");
@@ -734,21 +824,34 @@ public sealed class EntityService(
         if (request.NewTargetEntityId.HasValue)
         {
             if (!rel.SourceEntity.EntityWorkspaces.Any(ew => ew.WorkspaceId == workspaceId))
+            {
                 throw new AppException("relationship_not_in_workspace", 403, "Relationship does not belong to an entity in this workspace.");
+            }
 
             var newTarget = await entityRepository.GetByIdInWorkspaceAsync(request.NewTargetEntityId.Value, workspaceId, ct)
                 ?? throw new AppException("target_entity_not_found", 400, $"Target entity {request.NewTargetEntityId.Value} not found in workspace.");
             if (newTarget.IsArchived)
+            {
                 throw new AppException("cannot_link_archived_entity", 400, "Cannot link an archived entity.");
+            }
+
             if (newTarget.EntityTypeId != relType.TargetEntityTypeId)
+            {
                 throw new AppException("entity_wrong_type_for_relationship", 400, $"Entity type does not match relationship type '{relType.Name}'.");
+            }
+
             var targetTypeProps = await entityRepository.GetTypePropertiesAsync(newTarget.EntityTypeId, ct);
             if (targetTypeProps.Count > 0 && targetTypeProps.All(tp => tp.Property.IsReadonly))
+            {
                 throw new AppException("entity_all_readonly_link", 400, "Cannot link an entity whose properties are all read-only.");
+            }
+
             if (relType.RelationshipCardinality == Persistence.Entities.RelationshipCardinality.OneToOne)
             {
                 if (await entityRepository.CountRelationshipsByTargetAsync(newTarget.Id, relType.Id, ct) > 0)
+                {
                     throw new AppException("target_cardinality_violation", 400, $"Target entity already has a '{relType.Name}' link (cardinality constraint).");
+                }
             }
 
             result = await entityRepository.ExecuteInTransactionAsync(async () =>
@@ -785,27 +888,42 @@ public sealed class EntityService(
             }, ct);
 
             if (relationshipNotifier is not null)
+            {
                 await relationshipNotifier.NotifyChangedAsync(workspaceId, ct, rel.SourceEntityId, rel.TargetEntityId, newTarget.Id);
+            }
         }
         else
         {
             if (!rel.TargetEntity.EntityWorkspaces.Any(ew => ew.WorkspaceId == workspaceId))
+            {
                 throw new AppException("relationship_not_in_workspace", 403, "Relationship does not belong to an entity in this workspace.");
+            }
 
             var newSource = await entityRepository.GetByIdInWorkspaceAsync(request.NewSourceEntityId!.Value, workspaceId, ct)
                 ?? throw new AppException("source_entity_not_found", 400, $"Source entity {request.NewSourceEntityId.Value} not found in workspace.");
             if (newSource.IsArchived)
+            {
                 throw new AppException("cannot_link_archived_entity", 400, "Cannot link an archived entity.");
+            }
+
             if (newSource.EntityTypeId != relType.SourceEntityTypeId)
+            {
                 throw new AppException("entity_wrong_type_for_relationship", 400, $"Entity type does not match relationship type '{relType.Name}'.");
+            }
+
             var sourceTypeProps = await entityRepository.GetTypePropertiesAsync(newSource.EntityTypeId, ct);
             if (sourceTypeProps.Count > 0 && sourceTypeProps.All(tp => tp.Property.IsReadonly))
+            {
                 throw new AppException("entity_all_readonly_link", 400, "Cannot link an entity whose properties are all read-only.");
+            }
+
             if (relType.RelationshipCardinality == Persistence.Entities.RelationshipCardinality.ManyToOne
                 || relType.RelationshipCardinality == Persistence.Entities.RelationshipCardinality.OneToOne)
             {
                 if (await entityRepository.CountRelationshipsBySourceAsync(newSource.Id, relType.Id, ct) > 0)
+                {
                     throw new AppException("source_cardinality_violation", 400, $"Source entity already has a '{relType.Name}' link (cardinality constraint).");
+                }
             }
 
             result = await entityRepository.ExecuteInTransactionAsync(async () =>
@@ -842,7 +960,9 @@ public sealed class EntityService(
             }, ct);
 
             if (relationshipNotifier is not null)
+            {
                 await relationshipNotifier.NotifyChangedAsync(workspaceId, ct, rel.SourceEntityId, rel.TargetEntityId, newSource.Id);
+            }
         }
 
         return result;

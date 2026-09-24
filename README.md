@@ -28,6 +28,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/totalbyte/devops-practice/actions/workflows/ci.yaml"><img src="https://github.com/totalbyte/devops-practice/actions/workflows/ci.yaml/badge.svg?branch=main" alt="CI"></a>
   <img src="https://img.shields.io/badge/license-TBD-lightgrey?style=flat-square" alt="License TBD">
   <img src="https://img.shields.io/badge/status-MVP-success?style=flat-square" alt="Status: MVP">
   <img src="https://img.shields.io/badge/PRs-welcome-2F5BEA?style=flat-square" alt="PRs welcome">
@@ -422,6 +423,7 @@ Every backend service ships interactive **Scalar** API docs and a raw OpenAPI sp
 | [SCALAR-GUIDE.md](SCALAR-GUIDE.md) | Interactive API walkthrough |
 | [docs/USER-GUIDE.md](docs/USER-GUIDE.md) | End-user scenarios for every feature |
 | [AI-GUIDES-INDEX.md](AI-GUIDES-INDEX.md) | Deep technical guides (architecture, microservices, runbooks) |
+| [docs/ai-guides/CI-PIPELINE.md](docs/ai-guides/CI-PIPELINE.md) | CI pipeline: lint/build/test per service, image scanning, GHCR publishing, required checks |
 
 ---
 

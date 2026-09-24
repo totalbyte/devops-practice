@@ -6,3 +6,5 @@ D|Messaging|+Relativa.Messaging
 E|Audit|+Relativa.Audit
 F|Core|+Relativa.Core
 G|Graph|+Relativa.Graph
+H|Gateway|+Relativa.Gateway
+I|Migration|+Relativa.Migration

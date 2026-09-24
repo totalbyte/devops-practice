@@ -1,8 +1,9 @@
 using System.Text;
+
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
+
 using Testcontainers.RabbitMq;
-using Xunit;
 
 namespace Relativa.Messaging.Tests;
 

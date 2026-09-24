@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+
 using Relativa.Graph.Dashboard.Dto;
 using Relativa.Graph.Data;
 using Relativa.Graph.ML;
@@ -14,8 +15,8 @@ public sealed class WorkspaceDashboardService(
     : IWorkspaceDashboardService
 {
     private const string EnqueueCooldownPrefix = "ml-enqueue-cooldown:";
-    private const string ViewAnalytics   = "view_analytics";
-    private const string ViewBasicStats  = "view_basic_stats";
+    private const string ViewAnalytics = "view_analytics";
+    private const string ViewBasicStats = "view_basic_stats";
     private const string ViewTeamAnalytics = "view_team_analytics";
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -30,7 +31,9 @@ public sealed class WorkspaceDashboardService(
             .FirstOrDefaultAsync(ct);
 
         if (orgId is null)
+        {
             return false;
+        }
 
         return await db.UserRoleOrganizations
             .Where(uro => uro.UserId == userId
@@ -43,7 +46,9 @@ public sealed class WorkspaceDashboardService(
         int userId, int workspaceId, CancellationToken ct)
     {
         if (await IsOrgOwnerAsync(userId, workspaceId, ct))
+        {
             return [ViewAnalytics, ViewBasicStats, ViewTeamAnalytics];
+        }
 
         return await db.UserRoleWorkspaces
             .Where(urw => urw.UserId == userId
@@ -73,7 +78,9 @@ public sealed class WorkspaceDashboardService(
         List<int> entityIds, IEnumerable<string> propertyNames, CancellationToken ct)
     {
         if (entityIds.Count == 0)
+        {
             return new Dictionary<int, Dictionary<string, string?>>();
+        }
 
         var propSet = propertyNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
         var rows = await db.EntityPropertyValues
@@ -116,12 +123,14 @@ public sealed class WorkspaceDashboardService(
         int userId, int workspaceId, CancellationToken ct)
     {
         var perms = await GetWorkspacePermissionsAsync(userId, workspaceId, ct);
-        bool hasFull  = perms.Contains(ViewAnalytics);
+        bool hasFull = perms.Contains(ViewAnalytics);
         bool hasBasic = perms.Contains(ViewBasicStats);
 
         if (!hasFull && !hasBasic)
+        {
             throw new ForbiddenAccessException(
                 "Requires view_analytics or view_basic_stats permission.");
+        }
 
         var workspace = await db.Workspaces
             .Where(w => w.Id == workspaceId && !w.IsArchived)
@@ -129,7 +138,7 @@ public sealed class WorkspaceDashboardService(
             .FirstOrDefaultAsync(ct)
             ?? throw new WorkspaceNotFoundException(workspaceId);
 
-        var dealIds   = await GetEntityIdsAsync(workspaceId, "deal",   ct);
+        var dealIds = await GetEntityIdsAsync(workspaceId, "deal", ct);
         var clientIds = await GetEntityIdsAsync(workspaceId, "client", ct);
 
         var memberCount = await db.UserRoleWorkspaces
@@ -140,7 +149,7 @@ public sealed class WorkspaceDashboardService(
 
         if (!hasFull)
         {
-            var basicDealProps   = await GetPropertyValuesAsync(dealIds,   ["status"],        ct);
+            var basicDealProps = await GetPropertyValuesAsync(dealIds, ["status"], ct);
             var basicClientProps = await GetPropertyValuesAsync(clientIds, ["client_status"], ct);
 
             int wonDeals = 0, lostDeals = 0, openDeals = 0;
@@ -148,9 +157,9 @@ public sealed class WorkspaceDashboardService(
             {
                 switch ((basicDealProps.GetValueOrDefault(id)?.GetValueOrDefault("status") ?? "").ToLowerInvariant())
                 {
-                    case "closed":  wonDeals++;  break;
+                    case "closed": wonDeals++; break;
                     case "revoked": lostDeals++; break;
-                    default:        openDeals++; break;
+                    default: openDeals++; break;
                 }
             }
 
@@ -167,36 +176,38 @@ public sealed class WorkspaceDashboardService(
         }
 
         // Full analytics
-        var today          = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var thisMonthStart = new DateOnly(today.Year, today.Month, 1);
         var nextMonthStart = thisMonthStart.AddMonths(1);
 
-        var dealProps   = await GetPropertyValuesAsync(dealIds,   ["status", "deal_value", "expected_close"], ct);
-        var clientProps = await GetPropertyValuesAsync(clientIds, ["client_status"],                          ct);
-        var taskIds     = await GetEntityIdsAsync(workspaceId, "task", ct);
-        var taskProps   = await GetPropertyValuesAsync(taskIds, ["task_status", "due_date"], ct);
+        var dealProps = await GetPropertyValuesAsync(dealIds, ["status", "deal_value", "expected_close"], ct);
+        var clientProps = await GetPropertyValuesAsync(clientIds, ["client_status"], ct);
+        var taskIds = await GetEntityIdsAsync(workspaceId, "task", ct);
+        var taskProps = await GetPropertyValuesAsync(taskIds, ["task_status", "due_date"], ct);
 
         int totalDeals = dealIds.Count, wonDeals2 = 0, lostDeals2 = 0, openDeals2 = 0, closingThisMonth = 0;
         decimal totalDealValue = 0m;
 
         foreach (var id in dealIds)
         {
-            var p      = dealProps.GetValueOrDefault(id);
+            var p = dealProps.GetValueOrDefault(id);
             var status = (p?.GetValueOrDefault("status") ?? "").ToLowerInvariant();
-            var value  = decimal.TryParse(p?.GetValueOrDefault("deal_value"), out var dv) ? dv : 0m;
+            var value = decimal.TryParse(p?.GetValueOrDefault("deal_value"), out var dv) ? dv : 0m;
             totalDealValue += value;
 
             switch (status)
             {
-                case "closed":  wonDeals2++;  break;
+                case "closed": wonDeals2++; break;
                 case "revoked": lostDeals2++; break;
-                default:        openDeals2++; break;
+                default: openDeals2++; break;
             }
 
             var rawClose = p?.GetValueOrDefault("expected_close");
             if (rawClose is not null && DateOnly.TryParse(rawClose, out var closeDate)
                 && closeDate >= thisMonthStart && closeDate < nextMonthStart)
+            {
                 closingThisMonth++;
+            }
         }
 
         int totalClients2 = clientIds.Count, activeClients2 = 0;
@@ -204,7 +215,9 @@ public sealed class WorkspaceDashboardService(
         {
             if (string.Equals(clientProps.GetValueOrDefault(id)?.GetValueOrDefault("client_status"),
                 "active", StringComparison.OrdinalIgnoreCase))
+            {
                 activeClients2++;
+            }
         }
 
         int tasksOverdue = 0;
@@ -212,15 +225,20 @@ public sealed class WorkspaceDashboardService(
         {
             var p = taskProps.GetValueOrDefault(id);
             if (string.Equals(p?.GetValueOrDefault("task_status"), "done", StringComparison.OrdinalIgnoreCase))
+            {
                 continue;
+            }
+
             var rawDue = p?.GetValueOrDefault("due_date");
             if (rawDue is not null && DateOnly.TryParse(rawDue, out var due) && due < today)
+            {
                 tasksOverdue++;
+            }
         }
 
         var closedOrLost = wonDeals2 + lostDeals2;
-        var winRate      = closedOrLost > 0 ? Math.Round((double)wonDeals2 / closedOrLost, 4) : 0.0;
-        var avgDealSize  = totalDeals > 0 ? Math.Round(totalDealValue / totalDeals, 2) : 0m;
+        var winRate = closedOrLost > 0 ? Math.Round((double)wonDeals2 / closedOrLost, 4) : 0.0;
+        var avgDealSize = totalDeals > 0 ? Math.Round(totalDealValue / totalDeals, 2) : 0m;
 
         return new WorkspaceSummaryDto(
             workspace.Id, workspace.Name,
@@ -240,14 +258,19 @@ public sealed class WorkspaceDashboardService(
     {
         var perms = await GetWorkspacePermissionsAsync(userId, workspaceId, ct);
         if (!perms.Contains(ViewAnalytics))
+        {
             throw new ForbiddenAccessException("Requires view_analytics permission.");
+        }
 
-        var dealIds   = await GetEntityIdsAsync(workspaceId, "deal", ct);
+        var dealIds = await GetEntityIdsAsync(workspaceId, "deal", ct);
         var dealProps = await GetPropertyValuesAsync(dealIds, ["deal_stage", "status", "deal_value"], ct);
 
-        var stageOrder  = new[] { "Prospecting", "Qualification", "Proposal", "Negotiation" };
+        var stageOrder = new[] { "Prospecting", "Qualification", "Proposal", "Negotiation" };
         var stageGroups = new Dictionary<string, (int count, decimal value)>(StringComparer.OrdinalIgnoreCase);
-        foreach (var s in stageOrder) stageGroups[s] = (0, 0);
+        foreach (var s in stageOrder)
+        {
+            stageGroups[s] = (0, 0);
+        }
 
         var statusBreakdown = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
         { ["opened"] = 0, ["pending"] = 0, ["closed"] = 0, ["revoked"] = 0 };
@@ -256,20 +279,35 @@ public sealed class WorkspaceDashboardService(
 
         foreach (var id in dealIds)
         {
-            var p      = dealProps.GetValueOrDefault(id);
-            var stage  = p?.GetValueOrDefault("deal_stage") ?? "";
+            var p = dealProps.GetValueOrDefault(id);
+            var stage = p?.GetValueOrDefault("deal_stage") ?? "";
             var status = p?.GetValueOrDefault("status") ?? "opened";
-            var value  = decimal.TryParse(p?.GetValueOrDefault("deal_value"), out var dv) ? dv : 0m;
+            var value = decimal.TryParse(p?.GetValueOrDefault("deal_value"), out var dv) ? dv : 0m;
 
             if (!string.IsNullOrEmpty(stage) && stageGroups.TryGetValue(stage, out var sg))
+            {
                 stageGroups[stage] = (sg.count + 1, sg.value + value);
+            }
 
             var sk = status.ToLowerInvariant();
-            if (statusBreakdown.ContainsKey(sk)) statusBreakdown[sk]++;
-            else statusBreakdown["opened"]++;
+            if (statusBreakdown.ContainsKey(sk))
+            {
+                statusBreakdown[sk]++;
+            }
+            else
+            {
+                statusBreakdown["opened"]++;
+            }
 
-            if (sk == "closed")  wonDeals++;
-            if (sk == "revoked") lostDeals++;
+            if (sk == "closed")
+            {
+                wonDeals++;
+            }
+
+            if (sk == "revoked")
+            {
+                lostDeals++;
+            }
         }
 
         var totalCount = dealIds.Count;
@@ -280,11 +318,11 @@ public sealed class WorkspaceDashboardService(
                 totalCount > 0 ? Math.Round((double)count / totalCount, 4) : 0.0);
         }).ToList();
 
-        var closedOrLost     = wonDeals + lostDeals;
-        var conversionRate   = closedOrLost > 0 ? Math.Round((double)wonDeals / closedOrLost, 4) : 0.0;
-        var closedDealIds    = dealIds.Where(id => (dealProps.GetValueOrDefault(id)?.GetValueOrDefault("status") ?? "") == "closed").ToList();
-        var closedProps      = await GetPropertyValuesAsync(closedDealIds, ["expected_close"], ct);
-        var today2           = DateOnly.FromDateTime(DateTime.UtcNow);
+        var closedOrLost = wonDeals + lostDeals;
+        var conversionRate = closedOrLost > 0 ? Math.Round((double)wonDeals / closedOrLost, 4) : 0.0;
+        var closedDealIds = dealIds.Where(id => (dealProps.GetValueOrDefault(id)?.GetValueOrDefault("status") ?? "") == "closed").ToList();
+        var closedProps = await GetPropertyValuesAsync(closedDealIds, ["expected_close"], ct);
+        var today2 = DateOnly.FromDateTime(DateTime.UtcNow);
         double totalDaysToClose = 0; int closedCount = 0;
 
         foreach (var id in closedDealIds)
@@ -310,9 +348,11 @@ public sealed class WorkspaceDashboardService(
     {
         var perms = await GetWorkspacePermissionsAsync(userId, workspaceId, ct);
         if (!perms.Contains(ViewAnalytics))
+        {
             throw new ForbiddenAccessException("Requires view_analytics permission.");
+        }
 
-        var dealIds   = await GetEntityIdsAsync(workspaceId, "deal", ct);
+        var dealIds = await GetEntityIdsAsync(workspaceId, "deal", ct);
         var dealProps = await GetPropertyValuesAsync(dealIds, ["title", "deal_value", "status"], ct);
 
         var activeDealIds = dealIds
@@ -343,20 +383,23 @@ public sealed class WorkspaceDashboardService(
             .Select(er => new { er.SourceEntityId, er.TargetEntityId })
             .ToListAsync(ct);
 
-        var clientIds  = dealClientRels.Select(r => r.TargetEntityId).Distinct().ToList();
+        var clientIds = dealClientRels.Select(r => r.TargetEntityId).Distinct().ToList();
         var clientProps = await GetPropertyValuesAsync(clientIds, ["company_name", "name", "first_name"], ct);
         var dealClientMap = dealClientRels.ToDictionary(r => r.SourceEntityId, r => r.TargetEntityId);
 
-        var items  = new List<RiskItemDto>();
-        var high   = new List<(int id, decimal value)>();
+        var items = new List<RiskItemDto>();
+        var high = new List<(int id, decimal value)>();
         var medium = new List<(int id, decimal value)>();
-        var low    = new List<(int id, decimal value)>();
+        var low = new List<(int id, decimal value)>();
 
         foreach (var id in activeDealIds)
         {
-            if (!mlScores.TryGetValue(id, out var score) || score.ClosureScore is null) continue;
+            if (!mlScores.TryGetValue(id, out var score) || score.ClosureScore is null)
+            {
+                continue;
+            }
 
-            var p     = dealProps.GetValueOrDefault(id);
+            var p = dealProps.GetValueOrDefault(id);
             var title = p?.GetValueOrDefault("title") ?? $"Deal #{id}";
             var value = decimal.TryParse(p?.GetValueOrDefault("deal_value"), out var dv) ? dv : 0m;
 
@@ -375,9 +418,9 @@ public sealed class WorkspaceDashboardService(
 
             switch (bucket)
             {
-                case "high":   high.Add((id, value));   break;
+                case "high": high.Add((id, value)); break;
                 case "medium": medium.Add((id, value)); break;
-                case "low":    low.Add((id, value));    break;
+                case "low": low.Add((id, value)); break;
             }
         }
 
@@ -390,9 +433,9 @@ public sealed class WorkspaceDashboardService(
         return new RiskDistributionDto(
             new Dictionary<string, RiskBucketDto>
             {
-                ["high"]   = MakeBucket(high),
+                ["high"] = MakeBucket(high),
                 ["medium"] = MakeBucket(medium),
-                ["low"]    = MakeBucket(low),
+                ["low"] = MakeBucket(low),
             },
             items.OrderBy(i => i.Score).ToList());
     }
@@ -406,43 +449,57 @@ public sealed class WorkspaceDashboardService(
     {
         var perms = await GetWorkspacePermissionsAsync(userId, workspaceId, ct);
         if (!perms.Contains(ViewAnalytics))
+        {
             throw new ForbiddenAccessException("Requires view_analytics permission.");
+        }
 
-        var dealIds   = await GetEntityIdsAsync(workspaceId, "deal", ct);
+        var dealIds = await GetEntityIdsAsync(workspaceId, "deal", ct);
         var dealProps = await GetPropertyValuesAsync(dealIds, ["status", "deal_value", "expected_close"], ct);
 
-        var now    = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
         var months = Enumerable.Range(0, 6)
             .Select(i => now.AddMonths(-5 + i))
             .Select(d => new DateOnly(d.Year, d.Month, 1))
             .ToList();
 
-        var newDealsCounts   = months.ToDictionary(m => m, _ => 0);
-        var closedWonCounts  = months.ToDictionary(m => m, _ => 0);
+        var newDealsCounts = months.ToDictionary(m => m, _ => 0);
+        var closedWonCounts = months.ToDictionary(m => m, _ => 0);
         var closedLostCounts = months.ToDictionary(m => m, _ => 0);
-        var wonRevenues      = months.ToDictionary(m => m, _ => 0m);
-        var activeValues     = months.ToDictionary(m => m, _ => 0m);
+        var wonRevenues = months.ToDictionary(m => m, _ => 0m);
+        var activeValues = months.ToDictionary(m => m, _ => 0m);
 
         var windowStart = months[0];
-        var windowEnd   = months[^1].AddMonths(1);
+        var windowEnd = months[^1].AddMonths(1);
 
         foreach (var id in dealIds)
         {
-            var p      = dealProps.GetValueOrDefault(id);
+            var p = dealProps.GetValueOrDefault(id);
             var status = (p?.GetValueOrDefault("status") ?? "").ToLowerInvariant();
-            var value  = decimal.TryParse(p?.GetValueOrDefault("deal_value"), out var dv) ? dv : 0m;
+            var value = decimal.TryParse(p?.GetValueOrDefault("deal_value"), out var dv) ? dv : 0m;
 
             var rawClose = p?.GetValueOrDefault("expected_close");
-            if (rawClose is null || !DateOnly.TryParse(rawClose, out var closeDate)) continue;
+            if (rawClose is null || !DateOnly.TryParse(rawClose, out var closeDate))
+            {
+                continue;
+            }
 
             var closeMonth = new DateOnly(closeDate.Year, closeDate.Month, 1);
-            if (closeMonth < windowStart || closeMonth >= windowEnd) continue;
+            if (closeMonth < windowStart || closeMonth >= windowEnd)
+            {
+                continue;
+            }
 
             newDealsCounts[closeMonth]++;
 
-            if (status == "closed")  { closedWonCounts[closeMonth]++;  wonRevenues[closeMonth] += value; }
-            else if (status == "revoked") closedLostCounts[closeMonth]++;
-            else activeValues[closeMonth] += value;
+            if (status == "closed") { closedWonCounts[closeMonth]++; wonRevenues[closeMonth] += value; }
+            else if (status == "revoked")
+            {
+                closedLostCounts[closeMonth]++;
+            }
+            else
+            {
+                activeValues[closeMonth] += value;
+            }
         }
 
         return new TrendsDto(months.Select(m => new TrendsMonthDto(
@@ -460,12 +517,14 @@ public sealed class WorkspaceDashboardService(
     {
         var perms = await GetWorkspacePermissionsAsync(userId, workspaceId, ct);
         if (!perms.Contains(ViewAnalytics))
+        {
             throw new ForbiddenAccessException("Requires view_analytics permission.");
+        }
 
-        var dealIds   = await GetEntityIdsAsync(workspaceId, "deal",   ct);
+        var dealIds = await GetEntityIdsAsync(workspaceId, "deal", ct);
         var clientIds = await GetEntityIdsAsync(workspaceId, "client", ct);
 
-        var dealProps   = await GetPropertyValuesAsync(dealIds,   ["title", "deal_value", "deal_stage", "priority", "status"], ct);
+        var dealProps = await GetPropertyValuesAsync(dealIds, ["title", "deal_value", "deal_stage", "priority", "status"], ct);
         var clientProps = await GetPropertyValuesAsync(clientIds, ["company_name", "name", "industry", "client_status"], ct);
 
         var top10DealIds = dealIds
@@ -479,14 +538,14 @@ public sealed class WorkspaceDashboardService(
             .Select(er => new { er.SourceEntityId, er.TargetEntityId })
             .ToListAsync(ct);
 
-        var relClientIds  = dealClientRels.Select(r => r.TargetEntityId).Distinct().ToList();
+        var relClientIds = dealClientRels.Select(r => r.TargetEntityId).Distinct().ToList();
         var relClientProps = await GetPropertyValuesAsync(relClientIds, ["company_name", "name"], ct);
         var dealClientMap = dealClientRels.ToDictionary(r => r.SourceEntityId, r => r.TargetEntityId);
 
         var topDeals = top10DealIds.Select(id =>
         {
-            var p    = dealProps.GetValueOrDefault(id);
-            var val  = decimal.TryParse(p?.GetValueOrDefault("deal_value"), out var dv) ? dv : 0m;
+            var p = dealProps.GetValueOrDefault(id);
+            var val = decimal.TryParse(p?.GetValueOrDefault("deal_value"), out var dv) ? dv : 0m;
             string? clientName = null;
             if (dealClientMap.TryGetValue(id, out var cid))
             {
@@ -521,7 +580,11 @@ public sealed class WorkspaceDashboardService(
             var closed = deals
                 .Where(did => (dealProps.GetValueOrDefault(did)?.GetValueOrDefault("status") ?? "") == "closed")
                 .Sum(DealValue);
-            if (closed > 0) return (closed, false);
+            if (closed > 0)
+            {
+                return (closed, false);
+            }
+
             var expected = deals
                 .Where(did => (dealProps.GetValueOrDefault(did)?.GetValueOrDefault("status") ?? "") is "opened" or "pending")
                 .Sum(DealValue);
@@ -535,20 +598,20 @@ public sealed class WorkspaceDashboardService(
             .Take(10)
             .ToList();
 
-        var top10ClientIds   = clientLtvs.Select(x => x.id).ToList();
+        var top10ClientIds = clientLtvs.Select(x => x.id).ToList();
         var allLinkedDealIds = top10ClientIds.SelectMany(id => allClientDealMap.GetValueOrDefault(id, [])).Distinct().ToList();
-        var allMlScores      = await mlClient.ScoreBatchAsync(allLinkedDealIds, ct);
+        var allMlScores = await mlClient.ScoreBatchAsync(allLinkedDealIds, ct);
 
         var topClients = clientLtvs.Select(x =>
         {
             var (id, ltv, isExpected) = x;
-            var p      = clientProps.GetValueOrDefault(id);
+            var p = clientProps.GetValueOrDefault(id);
             var linked = allClientDealMap.GetValueOrDefault(id, []);
             var active = linked.Count(did => (dealProps.GetValueOrDefault(did)?.GetValueOrDefault("status") ?? "") is "opened" or "pending");
             var scores = linked.Where(did => allMlScores.TryGetValue(did, out var ms) && ms.ClosureScore.HasValue)
                                .Select(did => allMlScores[did].ClosureScore!.Value).ToList();
             double? avg = scores.Count > 0 ? Math.Round(scores.Average(), 4) : null;
-            var name    = p?.GetValueOrDefault("company_name") ?? p?.GetValueOrDefault("name") ?? $"Client #{id}";
+            var name = p?.GetValueOrDefault("company_name") ?? p?.GetValueOrDefault("name") ?? $"Client #{id}";
             return new TopClientDto(id, name, p?.GetValueOrDefault("industry"), ltv, isExpected, active, avg);
         }).ToList();
 
@@ -564,7 +627,9 @@ public sealed class WorkspaceDashboardService(
     {
         var perms = await GetWorkspacePermissionsAsync(userId, workspaceId, ct);
         if (!perms.Contains(ViewTeamAnalytics))
+        {
             throw new ForbiddenAccessException("Requires view_team_analytics permission.");
+        }
 
         // Members with role names
         var members = await db.UserRoleWorkspaces
@@ -596,9 +661,9 @@ public sealed class WorkspaceDashboardService(
             .ToListAsync(ct);
 
         var taskEntityIds = taskCreators.Select(t => t.Id).Distinct().ToList();
-        var taskProps     = await GetPropertyValuesAsync(taskEntityIds, ["task_status"], ct);
+        var taskProps = await GetPropertyValuesAsync(taskEntityIds, ["task_status"], ct);
 
-        var tasksByUser     = taskCreators.GroupBy(t => t.CreatedByUserId).ToDictionary(g => g.Key, g => g.Count());
+        var tasksByUser = taskCreators.GroupBy(t => t.CreatedByUserId).ToDictionary(g => g.Key, g => g.Count());
         var tasksDoneByUser = taskCreators
             .Where(t => string.Equals(taskProps.GetValueOrDefault(t.Id)?.GetValueOrDefault("task_status"),
                         "done", StringComparison.OrdinalIgnoreCase))
@@ -609,9 +674,9 @@ public sealed class WorkspaceDashboardService(
             .GroupBy(m => m.UserId)
             .Select(g =>
             {
-                var uid  = g.Key;
+                var uid = g.Key;
                 var role = g.OrderBy(x => x.Name).First().Name;
-                var u    = userDetails.GetValueOrDefault(uid);
+                var u = userDetails.GetValueOrDefault(uid);
                 var full = u != null ? $"{u.FirstName} {u.LastName}".Trim() : $"User #{uid}";
                 return new MemberActivityDto(
                     uid, full, role,
@@ -628,12 +693,18 @@ public sealed class WorkspaceDashboardService(
         var analysisType = await db.EntityTypes
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Name == "deal_analysis", ct);
-        if (analysisType is null) return;
+        if (analysisType is null)
+        {
+            return;
+        }
 
         var relType = await db.EntityRelationshipTypes
             .AsNoTracking()
             .FirstOrDefaultAsync(rt => rt.Name == "deal_analysis", ct);
-        if (relType is null) return;
+        if (relType is null)
+        {
+            return;
+        }
 
         var linkedDealIds = await db.EntityRelationships
             .Where(er => dealIds.Contains(er.SourceEntityId) && er.RelationshipTypeId == relType.Id)
@@ -641,14 +712,17 @@ public sealed class WorkspaceDashboardService(
             .ToHashSetAsync(ct);
 
         var missing = dealIds.Where(id => !linkedDealIds.Contains(id)).ToList();
-        if (missing.Count == 0) return;
+        if (missing.Count == 0)
+        {
+            return;
+        }
 
         var newEntities = missing
             .Select(_ => new Relativa.Persistence.Entities.Entity
             {
-                EntityTypeId    = analysisType.Id,
+                EntityTypeId = analysisType.Id,
                 CreatedByUserId = userId,
-                IsArchived      = false,
+                IsArchived = false,
             })
             .ToList();
         db.Entities.AddRange(newEntities);
@@ -658,13 +732,13 @@ public sealed class WorkspaceDashboardService(
         {
             db.EntityWorkspaces.Add(new Relativa.Persistence.Entities.EntityWorkspace
             {
-                EntityId    = newEntities[i].Id,
+                EntityId = newEntities[i].Id,
                 WorkspaceId = workspaceId,
             });
             db.EntityRelationships.Add(new Relativa.Persistence.Entities.EntityRelationship
             {
-                SourceEntityId     = missing[i],
-                TargetEntityId     = newEntities[i].Id,
+                SourceEntityId = missing[i],
+                TargetEntityId = newEntities[i].Id,
                 RelationshipTypeId = relType.Id,
             });
         }

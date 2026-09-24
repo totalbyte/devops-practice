@@ -1,4 +1,5 @@
 using FluentValidation;
+
 using Relativa.Authentication.Application.DTOs;
 using Relativa.Authentication.Application.Interfaces;
 using Relativa.Authentication.Domain.Interfaces;
@@ -30,7 +31,10 @@ public sealed class UserSettingsService(
     private async Task<UserSettings> GetOrCreateSettingsAsync(int userId, CancellationToken ct)
     {
         var settings = await userSettingsRepository.GetByUserIdAsync(userId, ct);
-        if (settings is not null) return settings;
+        if (settings is not null)
+        {
+            return settings;
+        }
 
         settings = new UserSettings { UserId = userId };
         await userSettingsRepository.AddAsync(settings, ct);

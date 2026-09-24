@@ -1,5 +1,3 @@
-using Relativa.Graph.Dashboard.Dto;
-
 namespace Relativa.Graph.Dashboard;
 
 public static class DashboardEndpoints
@@ -91,7 +89,10 @@ public static class DashboardEndpoints
     {
         var v = ctx.Request.Headers["X-User-Id"].ToString();
         if (string.IsNullOrEmpty(v) || !int.TryParse(v, out var id))
+        {
             throw new UnauthorizedAccessException("Missing or invalid X-User-Id header.");
+        }
+
         return id;
     }
 }

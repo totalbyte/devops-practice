@@ -1,13 +1,15 @@
 using FluentValidation.TestHelper;
+
 using Relativa.Core.Application.DTOs.Entity;
 using Relativa.Core.Application.DTOs.JoinRequest;
 using Relativa.Core.Application.DTOs.Member;
+using Relativa.Core.Application.DTOs.Organization;
 using Relativa.Core.Application.DTOs.OrgInvitation;
 using Relativa.Core.Application.DTOs.OrgRole;
-using Relativa.Core.Application.DTOs.Organization;
 using Relativa.Core.Application.DTOs.Role;
 using Relativa.Core.Application.DTOs.Workspace;
 using Relativa.Core.Application.Validators;
+
 using Xunit;
 
 namespace Relativa.Core.Application.Tests;

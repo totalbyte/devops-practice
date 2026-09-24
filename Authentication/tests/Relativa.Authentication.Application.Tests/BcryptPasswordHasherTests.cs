@@ -1,5 +1,7 @@
 using FluentAssertions;
+
 using Relativa.Authentication.Infrastructure.Services;
+
 using Xunit;
 
 namespace Relativa.Authentication.Application.Tests;

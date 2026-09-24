@@ -1,11 +1,14 @@
 using System.Net;
+
 using FluentAssertions;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using NSubstitute;
-using Relativa.Graph;
+
 using Xunit;
 
 namespace Relativa.Graph.Integration.Tests;

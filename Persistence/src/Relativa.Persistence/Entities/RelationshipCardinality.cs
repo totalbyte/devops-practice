@@ -1,5 +1,3 @@
-using System;
-
 namespace Relativa.Persistence.Entities;
 
 /// <summary>

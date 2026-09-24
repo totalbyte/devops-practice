@@ -1,6 +1,6 @@
-using Relativa.Core.Application.Exceptions;
-using Relativa.Core.Application.DTOs.Member;
 using Relativa.Core.Application.Authorization;
+using Relativa.Core.Application.DTOs.Member;
+using Relativa.Core.Application.Exceptions;
 using Relativa.Core.Application.Interfaces;
 using Relativa.Core.Application.Utilities;
 using Relativa.Core.Domain.Interfaces;
@@ -47,7 +47,9 @@ public sealed class WorkspaceMemberService(
             ?? throw new AppException("role_not_found", 400, "The specified role does not exist.");
 
         if (role.WorkspaceId.HasValue && role.WorkspaceId.Value != workspaceId)
+        {
             throw new AppException("role_not_in_workspace", 400, "The specified role does not belong to this workspace.");
+        }
 
         var targetHasFullAuthority = RolePermissionEvaluator.HasAllPermissions(
             targetMember.Role,
@@ -101,7 +103,9 @@ public sealed class WorkspaceMemberService(
     public async Task RemoveAsync(int workspaceId, int targetUserId, int callerUserId, CancellationToken ct = default)
     {
         if (targetUserId != callerUserId)
+        {
             await RequireRemoveMemberPermissionAsync(callerUserId, workspaceId, ct);
+        }
 
         var member = await memberRepository.GetAsync(targetUserId, workspaceId, ct)
             ?? throw new AppException("target_not_ws_member", 404, "Target user is not a member of this workspace.");
@@ -139,13 +143,17 @@ public sealed class WorkspaceMemberService(
 
         var existingMembership = await memberRepository.GetAsync(request.UserId, workspaceId, ct);
         if (existingMembership is not null)
+        {
             throw new AppException("already_ws_member", 409, "User is already a member of this workspace.");
+        }
 
         var role = await roleRepository.GetByIdAsync(request.RoleId, ct)
             ?? throw new AppException("role_not_found", 400, "The specified role does not exist.");
 
         if (role.WorkspaceId.HasValue && role.WorkspaceId.Value != workspaceId)
+        {
             throw new AppException("role_not_in_workspace", 400, "The specified role does not belong to this workspace.");
+        }
 
         var member = new UserRoleWorkspace
         {
@@ -190,14 +198,18 @@ public sealed class WorkspaceMemberService(
     private async Task RequirePermission(int userId, int workspaceId, string permission, CancellationToken ct)
     {
         if (!await workspaceAccess.HasWorkspacePermissionAsync(userId, workspaceId, permission, ct))
+        {
             throw new AppException("permission_denied", 403, $"You do not have the '{permission}' permission in this workspace.");
+        }
     }
 
     private async Task<bool> WorkspaceMemberHasOrOrgOwnerPermissionAsync(int userId, int workspaceId, string permission,
         CancellationToken ct)
     {
         if (await workspaceAccess.IsOrgOwnerOfWorkspaceAsync(userId, workspaceId, ct))
+        {
             return true;
+        }
 
         var m = await memberRepository.GetAsync(userId, workspaceId, ct);
         return m?.Role?.RolePermissions
@@ -208,7 +220,9 @@ public sealed class WorkspaceMemberService(
     {
         var workspace = await workspaceRepository.GetByIdAsync(workspaceId, ct);
         if (workspace is null)
+        {
             return false;
+        }
 
         var orgMembership = await orgMemberRepository.GetAsync(userId, workspace.OrganizationId, ct);
         return orgMembership?.Role?.RolePermissions
@@ -218,10 +232,14 @@ public sealed class WorkspaceMemberService(
     private async Task RequireAddMemberPermissionAsync(int callerUserId, int workspaceId, CancellationToken ct)
     {
         if (await WorkspaceMemberHasOrOrgOwnerPermissionAsync(callerUserId, workspaceId, "add_ws_members", ct))
+        {
             return;
+        }
 
         if (await IsOrgWorkspaceMembersManagerAsync(callerUserId, workspaceId, ct))
+        {
             return;
+        }
 
         var workspace = await workspaceRepository.GetByIdAsync(workspaceId, ct)
             ?? throw new AppException("workspace_not_found", 404, "Workspace not found.");
@@ -235,10 +253,14 @@ public sealed class WorkspaceMemberService(
     private async Task RequireRemoveMemberPermissionAsync(int callerUserId, int workspaceId, CancellationToken ct)
     {
         if (await WorkspaceMemberHasOrOrgOwnerPermissionAsync(callerUserId, workspaceId, "remove_ws_members", ct))
+        {
             return;
+        }
 
         if (await IsOrgWorkspaceMembersManagerAsync(callerUserId, workspaceId, ct))
+        {
             return;
+        }
 
         var workspace = await workspaceRepository.GetByIdAsync(workspaceId, ct)
             ?? throw new AppException("workspace_not_found", 404, "Workspace not found.");

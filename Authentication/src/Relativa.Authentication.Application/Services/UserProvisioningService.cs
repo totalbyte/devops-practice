@@ -1,4 +1,5 @@
 using FluentValidation;
+
 using Relativa.Authentication.Application.DTOs;
 using Relativa.Authentication.Application.Exceptions;
 using Relativa.Authentication.Application.Interfaces;
@@ -20,7 +21,9 @@ public sealed class UserProvisioningService(
 
         var email = EmailNormalizer.Normalize(request.Email);
         if (await userRepository.ExistsAsync(email, ct))
+        {
             throw new AuthException("email_already_exists", 409, "A user with this email already exists.");
+        }
 
         var user = new User
         {

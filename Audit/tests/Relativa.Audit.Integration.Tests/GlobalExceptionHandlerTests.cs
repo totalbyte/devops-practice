@@ -1,13 +1,19 @@
 using System.Text.Json;
+
 using FluentAssertions;
+
 using FluentValidation;
 using FluentValidation.Results;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+
 using Npgsql;
+
 using Relativa.Audit.Application.Exceptions;
 using Relativa.Audit.Middleware;
+
 using Xunit;
 
 namespace Relativa.Audit.Integration.Tests;
@@ -20,7 +26,7 @@ public sealed class GlobalExceptionHandlerTests
     private static async Task<(int StatusCode, JsonElement Body)> InvokeAsync(Exception exception)
     {
         var context = new DefaultHttpContext();
-        var body    = new MemoryStream();
+        var body = new MemoryStream();
         context.Response.Body = body;
 
         var result = await Sut().TryHandleAsync(context, exception, CancellationToken.None);

@@ -1,7 +1,10 @@
 using System.Security.Claims;
+
 using FluentValidation;
 using FluentValidation.Results;
+
 using Microsoft.IdentityModel.JsonWebTokens;
+
 using Relativa.Audit.Application.DTOs;
 using Relativa.Audit.Application.Interfaces;
 using Relativa.Audit.Application.Validators;
@@ -187,12 +190,16 @@ public static class AuditEndpoints
             var sub = principal.FindFirstValue(ClaimTypes.NameIdentifier)
                 ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
             if (!string.IsNullOrEmpty(sub) && int.TryParse(sub, out var id))
+            {
                 return id;
+            }
         }
 
         var header = httpContext.Request.Headers[UserIdHeader].ToString();
         if (!string.IsNullOrEmpty(header) && int.TryParse(header, out var headerId))
+        {
             return headerId;
+        }
 
         throw new UnauthorizedAccessException("Missing or invalid user identity (JWT sub or X-User-Id).");
     }

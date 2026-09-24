@@ -1,14 +1,17 @@
-using Relativa.Core.Application.Exceptions;
 using FluentAssertions;
+
 using FluentValidation;
 using FluentValidation.Results;
+
 using Moq;
-using Relativa.Authentication.Domain.Interfaces;
+
 using Relativa.Core.Application.DTOs.Role;
 using Relativa.Core.Application.DTOs.Workspace;
+using Relativa.Core.Application.Exceptions;
 using Relativa.Core.Application.Services;
 using Relativa.Core.Domain.Interfaces;
 using Relativa.Persistence.Entities;
+
 using Xunit;
 
 namespace Relativa.Core.Application.Tests;

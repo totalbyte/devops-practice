@@ -1,0 +1,13 @@
+# Actions in the workflows are pinned to commit SHAs; Dependabot opens PRs that
+# bump both the SHA and the `# vX.Y.Z` comment when a new release appears.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/start-stack
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']

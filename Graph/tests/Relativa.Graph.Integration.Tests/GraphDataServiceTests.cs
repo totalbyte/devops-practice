@@ -1,13 +1,17 @@
-using DotNet.Testcontainers.Builders;
 using FluentAssertions;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+
 using NSubstitute;
+
 using Relativa.Graph.Data;
 using Relativa.Graph.Graph;
 using Relativa.Graph.ML;
 using Relativa.Persistence.Entities;
+
 using Testcontainers.PostgreSql;
+
 using Xunit;
 
 namespace Relativa.Graph.Integration.Tests;
@@ -19,7 +23,6 @@ public sealed class GraphDatabaseFixture : IAsyncLifetime
         .WithDatabase("relativa_test")
         .WithUsername("relativa")
         .WithPassword("test")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
         .Build();
 
     public string ConnectionString { get; private set; } = null!;
@@ -49,12 +52,12 @@ public sealed class GraphDatabaseFixture : IAsyncLifetime
 
     private async Task SeedBackgroundAsync(GraphQueryDbContext db)
     {
-        var org     = new Organization { Name = "Test Org", IsArchived = false };
+        var org = new Organization { Name = "Test Org", IsArchived = false };
         var orgRole = new OrganizationRole { Name = "org_member", Priority = 5, IsArchived = false };
-        var perm    = new Permission { Name = "view_entities", IsArchived = false };
-        var wsRole  = new WorkspaceRole { Name = "member", WorkspaceId = null, Priority = 5, IsArchived = false };
-        var deal    = new EntityType { Name = "deal" };
-        var client  = new EntityType { Name = "client" };
+        var perm = new Permission { Name = "view_entities", IsArchived = false };
+        var wsRole = new WorkspaceRole { Name = "member", WorkspaceId = null, Priority = 5, IsArchived = false };
+        var deal = new EntityType { Name = "deal" };
+        var client = new EntityType { Name = "client" };
 
         db.Organizations.Add(org);
         db.OrganizationRoles.Add(orgRole);
@@ -65,7 +68,8 @@ public sealed class GraphDatabaseFixture : IAsyncLifetime
 
         db.WorkspaceRolePermissions.Add(new WorkspaceRolePermission
         {
-            WsRoleId = wsRole.Id, PermissionId = perm.Id
+            WsRoleId = wsRole.Id,
+            PermissionId = perm.Id
         });
         db.EntityRelationshipTypes.Add(new EntityRelationshipType
         {
@@ -76,10 +80,10 @@ public sealed class GraphDatabaseFixture : IAsyncLifetime
         });
         await db.SaveChangesAsync();
 
-        OrgId             = org.Id;
-        OrgRoleId         = orgRole.Id;
-        WsRoleId          = wsRole.Id;
-        DealEntityTypeId  = deal.Id;
+        OrgId = org.Id;
+        OrgRoleId = orgRole.Id;
+        WsRoleId = wsRole.Id;
+        DealEntityTypeId = deal.Id;
         ClientEntityTypeId = client.Id;
         DealClientRelTypeId = db.EntityRelationshipTypes.Single(r => r.Name == "deal_client").Id;
     }
@@ -111,33 +115,44 @@ public sealed class GraphDataServiceTests : IAsyncLifetime
 
     private async Task<(int UserId, int WorkspaceId)> CreateUserWithWorkspaceAsync()
     {
-        var uid  = Guid.NewGuid().ToString("N")[..8];
+        var uid = Guid.NewGuid().ToString("N")[..8];
         var user = new User
         {
-            FirstName = uid, LastName = "Test",
+            FirstName = uid,
+            LastName = "Test",
             Email = $"{uid}@t.com",
-            Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false
+            Password = "x",
+            CreatedAt = DateTime.UtcNow,
+            IsArchived = false
         };
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
 
         var ws = new Workspace
         {
-            Name = $"WS-{uid}", IsArchived = false,
-            CreatedByUserId = user.Id, OrganizationId = _fixture.OrgId
+            Name = $"WS-{uid}",
+            IsArchived = false,
+            CreatedByUserId = user.Id,
+            OrganizationId = _fixture.OrgId
         };
         _db.Workspaces.Add(ws);
         await _db.SaveChangesAsync();
 
         _db.UserRoleOrganizations.Add(new UserRoleOrganization
         {
-            UserId = user.Id, OrganizationId = _fixture.OrgId, OrgRoleId = _fixture.OrgRoleId,
-            JoinedAt = DateTime.UtcNow, IsArchived = false
+            UserId = user.Id,
+            OrganizationId = _fixture.OrgId,
+            OrgRoleId = _fixture.OrgRoleId,
+            JoinedAt = DateTime.UtcNow,
+            IsArchived = false
         });
         _db.UserRoleWorkspaces.Add(new UserRoleWorkspace
         {
-            UserId = user.Id, WorkspaceId = ws.Id, WsRoleId = _fixture.WsRoleId,
-            JoinedAt = DateTime.UtcNow, IsArchived = false
+            UserId = user.Id,
+            WorkspaceId = ws.Id,
+            WsRoleId = _fixture.WsRoleId,
+            JoinedAt = DateTime.UtcNow,
+            IsArchived = false
         });
         await _db.SaveChangesAsync();
 
@@ -175,7 +190,7 @@ public sealed class GraphDataServiceTests : IAsyncLifetime
 
         result.Nodes.Should().HaveCount(2, "exactly one user_self node and one workspace node");
         result.Nodes.Should().ContainSingle(n => n.Type == "user_self" && n.ResourceId == userId);
-        result.Nodes.Should().ContainSingle(n => n.Type == "workspace"  && n.ResourceId == wsId);
+        result.Nodes.Should().ContainSingle(n => n.Type == "workspace" && n.ResourceId == wsId);
         result.Edges.Should().HaveCount(1);
         result.Edges.Single().Type.Should().Be("user_workspace");
     }
@@ -187,7 +202,9 @@ public sealed class GraphDataServiceTests : IAsyncLifetime
 
         var archived = new Entity
         {
-            EntityTypeId = _fixture.ClientEntityTypeId, CreatedByUserId = userId, IsArchived = true
+            EntityTypeId = _fixture.ClientEntityTypeId,
+            CreatedByUserId = userId,
+            IsArchived = true
         };
         _db.Entities.Add(archived);
         await _db.SaveChangesAsync();
@@ -203,15 +220,15 @@ public sealed class GraphDataServiceTests : IAsyncLifetime
     }
 
     [Theory]
-    [InlineData("high",   32.9, true,  "32.9 is just below the 33.0 lower bound of medium — qualifies as high risk")]
-    [InlineData("high",   33.0, false, "33.0 is the inclusive lower bound of medium — not high risk")]
-    [InlineData("medium", 33.0, true,  "33.0 is the inclusive lower bound of medium risk")]
+    [InlineData("high", 32.9, true, "32.9 is just below the 33.0 lower bound of medium — qualifies as high risk")]
+    [InlineData("high", 33.0, false, "33.0 is the inclusive lower bound of medium — not high risk")]
+    [InlineData("medium", 33.0, true, "33.0 is the inclusive lower bound of medium risk")]
     [InlineData("medium", 32.9, false, "32.9 falls below medium's lower bound of 33.0")]
-    [InlineData("medium", 66.9, true,  "66.9 is just below the 67.0 upper bound — still medium")]
+    [InlineData("medium", 66.9, true, "66.9 is just below the 67.0 upper bound — still medium")]
     [InlineData("medium", 67.0, false, "67.0 is the inclusive lower bound of low — exits medium")]
-    [InlineData("low",    67.0, true,  "67.0 is the exact inclusive lower bound of low risk")]
-    [InlineData("low",    66.9, false, "66.9 is below the 67.0 threshold — not low risk")]
-    [InlineData(null,     50.0, true,  "no filter applied — deal always included regardless of score")]
+    [InlineData("low", 67.0, true, "67.0 is the exact inclusive lower bound of low risk")]
+    [InlineData("low", 66.9, false, "66.9 is below the 67.0 threshold — not low risk")]
+    [InlineData(null, 50.0, true, "no filter applied — deal always included regardless of score")]
     public async Task BuildGraphAsync_RiskLevelFilter_IncludesOrExcludesDealAtThresholdBoundary(
         string? riskLevel, double closureScore, bool expectDealIncluded, string reason)
     {
@@ -294,12 +311,12 @@ public sealed class GraphDataServiceTests : IAsyncLifetime
     {
         var (userId, wsId) = await CreateUserWithWorkspaceAsync();
 
-        var bestDeal  = new Entity { EntityTypeId = _fixture.DealEntityTypeId, CreatedByUserId = userId, IsArchived = false };
+        var bestDeal = new Entity { EntityTypeId = _fixture.DealEntityTypeId, CreatedByUserId = userId, IsArchived = false };
         var worstDeal = new Entity { EntityTypeId = _fixture.DealEntityTypeId, CreatedByUserId = userId, IsArchived = false };
         _db.Entities.AddRange(bestDeal, worstDeal);
         await _db.SaveChangesAsync();
         _db.EntityWorkspaces.AddRange(
-            new EntityWorkspace { EntityId = bestDeal.Id,  WorkspaceId = wsId },
+            new EntityWorkspace { EntityId = bestDeal.Id, WorkspaceId = wsId },
             new EntityWorkspace { EntityId = worstDeal.Id, WorkspaceId = wsId });
         await _db.SaveChangesAsync();
 
@@ -307,7 +324,7 @@ public sealed class GraphDataServiceTests : IAsyncLifetime
         ml.ScoreBatchAsync(Arg.Any<IReadOnlyList<int>>(), Arg.Any<CancellationToken>())
             .Returns(new Dictionary<int, MlScoreDto>
             {
-                [bestDeal.Id]  = new MlScoreDto(bestDeal.Id,  90.0, 5.0,  null),
+                [bestDeal.Id] = new MlScoreDto(bestDeal.Id, 90.0, 5.0, null),
                 [worstDeal.Id] = new MlScoreDto(worstDeal.Id, 10.0, 80.0, null)
             });
 
@@ -330,16 +347,17 @@ public sealed class GraphDataServiceTests : IAsyncLifetime
     {
         var (userId, wsId) = await CreateUserWithWorkspaceAsync();
 
-        var deal   = new Entity { EntityTypeId = _fixture.DealEntityTypeId,   CreatedByUserId = userId, IsArchived = false };
+        var deal = new Entity { EntityTypeId = _fixture.DealEntityTypeId, CreatedByUserId = userId, IsArchived = false };
         var client = new Entity { EntityTypeId = _fixture.ClientEntityTypeId, CreatedByUserId = userId, IsArchived = false };
         _db.Entities.AddRange(deal, client);
         await _db.SaveChangesAsync();
         _db.EntityWorkspaces.AddRange(
-            new EntityWorkspace { EntityId = deal.Id,   WorkspaceId = wsId },
+            new EntityWorkspace { EntityId = deal.Id, WorkspaceId = wsId },
             new EntityWorkspace { EntityId = client.Id, WorkspaceId = wsId });
         _db.EntityRelationships.Add(new EntityRelationship
         {
-            SourceEntityId = deal.Id, TargetEntityId = client.Id,
+            SourceEntityId = deal.Id,
+            TargetEntityId = client.Id,
             RelationshipTypeId = _fixture.DealClientRelTypeId
         });
         await _db.SaveChangesAsync();
@@ -361,12 +379,15 @@ public sealed class GraphDataServiceTests : IAsyncLifetime
     [Fact]
     public async Task BuildGraphAsync_UserInMultipleWorkspaces_ReturnsOneNodeAndOneEdgePerWorkspace()
     {
-        var uid  = Guid.NewGuid().ToString("N")[..8];
+        var uid = Guid.NewGuid().ToString("N")[..8];
         var user = new User
         {
-            FirstName = uid, LastName = "Multi",
+            FirstName = uid,
+            LastName = "Multi",
             Email = $"{uid}@t.com",
-            Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false
+            Password = "x",
+            CreatedAt = DateTime.UtcNow,
+            IsArchived = false
         };
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
@@ -378,8 +399,11 @@ public sealed class GraphDataServiceTests : IAsyncLifetime
 
         _db.UserRoleOrganizations.Add(new UserRoleOrganization
         {
-            UserId = user.Id, OrganizationId = _fixture.OrgId, OrgRoleId = _fixture.OrgRoleId,
-            JoinedAt = DateTime.UtcNow, IsArchived = false
+            UserId = user.Id,
+            OrganizationId = _fixture.OrgId,
+            OrgRoleId = _fixture.OrgRoleId,
+            JoinedAt = DateTime.UtcNow,
+            IsArchived = false
         });
         _db.UserRoleWorkspaces.AddRange(
             new UserRoleWorkspace { UserId = user.Id, WorkspaceId = wsA.Id, WsRoleId = _fixture.WsRoleId, JoinedAt = DateTime.UtcNow, IsArchived = false },
@@ -416,18 +440,25 @@ public sealed class GraphDataServiceTests : IAsyncLifetime
         _db.OrganizationRoles.Add(adminRole);
         await _db.SaveChangesAsync();
         foreach (var p in perms)
+        {
             _db.Set<OrganizationRolePermission>().Add(new OrganizationRolePermission { OrgRoleId = adminRole.Id, PermissionId = p.Id });
+        }
+
         _db.UserRoleOrganizations.Add(new UserRoleOrganization
         {
-            UserId = userId, OrganizationId = _fixture.OrgId, OrgRoleId = adminRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = false
+            UserId = userId,
+            OrganizationId = _fixture.OrgId,
+            OrgRoleId = adminRole.Id,
+            JoinedAt = DateTime.UtcNow,
+            IsArchived = false
         });
 
-        var peer  = new User { FirstName = "Peer",  LastName = "Visible",  Email = Guid.NewGuid().ToString("N")[..8] + "@t.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
+        var peer = new User { FirstName = "Peer", LastName = "Visible", Email = Guid.NewGuid().ToString("N")[..8] + "@t.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
         var ghost = new User { FirstName = "Ghost", LastName = "Archived", Email = Guid.NewGuid().ToString("N")[..8] + "@t.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = true };
         _db.Users.AddRange(peer, ghost);
         await _db.SaveChangesAsync();
         _db.UserRoleOrganizations.AddRange(
-            new UserRoleOrganization { UserId = peer.Id,  OrganizationId = _fixture.OrgId, OrgRoleId = _fixture.OrgRoleId, JoinedAt = DateTime.UtcNow, IsArchived = false },
+            new UserRoleOrganization { UserId = peer.Id, OrganizationId = _fixture.OrgId, OrgRoleId = _fixture.OrgRoleId, JoinedAt = DateTime.UtcNow, IsArchived = false },
             new UserRoleOrganization { UserId = ghost.Id, OrganizationId = _fixture.OrgId, OrgRoleId = _fixture.OrgRoleId, JoinedAt = DateTime.UtcNow, IsArchived = false });
         await _db.SaveChangesAsync();
 
@@ -446,7 +477,7 @@ public sealed class GraphDataServiceTests : IAsyncLifetime
     [Fact]
     public async Task BuildGraphAsync_FullWorkspacePermissionsAndLabelledEntity_SetsManageEditDeleteAndResolvesLabel()
     {
-        var uid  = Guid.NewGuid().ToString("N")[..8];
+        var uid = Guid.NewGuid().ToString("N")[..8];
         var user = new User { FirstName = uid, LastName = "Perms", Email = uid + "@t.com", Password = "x", CreatedAt = DateTime.UtcNow, IsArchived = false };
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
@@ -462,7 +493,10 @@ public sealed class GraphDataServiceTests : IAsyncLifetime
         _db.WorkspaceRoles.Add(wsRole);
         await _db.SaveChangesAsync();
         foreach (var p in extraPerms.Append(viewPerm))
+        {
             _db.WorkspaceRolePermissions.Add(new WorkspaceRolePermission { WsRoleId = wsRole.Id, PermissionId = p.Id });
+        }
+
         _db.UserRoleOrganizations.Add(new UserRoleOrganization { UserId = user.Id, OrganizationId = _fixture.OrgId, OrgRoleId = _fixture.OrgRoleId, JoinedAt = DateTime.UtcNow, IsArchived = false });
         _db.UserRoleWorkspaces.Add(new UserRoleWorkspace { UserId = user.Id, WorkspaceId = ws.Id, WsRoleId = wsRole.Id, JoinedAt = DateTime.UtcNow, IsArchived = false });
         await _db.SaveChangesAsync();
@@ -498,12 +532,12 @@ public sealed class GraphDataServiceTests : IAsyncLifetime
 
         async Task<(int DealId, int ClientId)> AddPairAsync(decimal ltv)
         {
-            var deal   = new Entity { EntityTypeId = _fixture.DealEntityTypeId,   CreatedByUserId = userId, IsArchived = false };
+            var deal = new Entity { EntityTypeId = _fixture.DealEntityTypeId, CreatedByUserId = userId, IsArchived = false };
             var client = new Entity { EntityTypeId = _fixture.ClientEntityTypeId, CreatedByUserId = userId, IsArchived = false };
             _db.Entities.AddRange(deal, client);
             await _db.SaveChangesAsync();
             _db.EntityWorkspaces.AddRange(
-                new EntityWorkspace { EntityId = deal.Id,   WorkspaceId = wsId },
+                new EntityWorkspace { EntityId = deal.Id, WorkspaceId = wsId },
                 new EntityWorkspace { EntityId = client.Id, WorkspaceId = wsId });
             _db.EntityRelationships.Add(new EntityRelationship { SourceEntityId = deal.Id, TargetEntityId = client.Id, RelationshipTypeId = _fixture.DealClientRelTypeId });
             _db.EntityPropertyValues.Add(new EntityPropertyValue { EntityId = client.Id, PropertyId = ltvProp.Id, ValueDecimal = ltv });
@@ -512,14 +546,14 @@ public sealed class GraphDataServiceTests : IAsyncLifetime
         }
 
         var (goodDeal, goodClient) = await AddPairAsync(500000m);
-        var (badDeal,  badClient)  = await AddPairAsync(1000m);
+        var (badDeal, badClient) = await AddPairAsync(1000m);
 
         var ml = Substitute.For<IMlScoringClient>();
         ml.ScoreBatchAsync(Arg.Any<IReadOnlyList<int>>(), Arg.Any<CancellationToken>())
             .Returns(new Dictionary<int, MlScoreDto>
             {
-                [goodDeal] = new MlScoreDto(goodDeal, 90.0,  5.0, null),
-                [badDeal]  = new MlScoreDto(badDeal,  10.0, 80.0, null),
+                [goodDeal] = new MlScoreDto(goodDeal, 90.0, 5.0, null),
+                [badDeal] = new MlScoreDto(badDeal, 10.0, 80.0, null),
             });
 
         var result = await new GraphDataService(_db, ml)

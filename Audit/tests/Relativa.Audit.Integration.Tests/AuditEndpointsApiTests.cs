@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
+
 using FluentAssertions;
+
 using Xunit;
 
 namespace Relativa.Audit.Integration.Tests;

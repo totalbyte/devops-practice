@@ -67,7 +67,11 @@ public static class AggregatedOpenApiEndpoint
 
         foreach (var source in sources)
         {
-            if (source.Spec is null) continue;
+            if (source.Spec is null)
+            {
+                continue;
+            }
+
             var root = source.Spec.RootElement;
 
             // Merge schemas with prefix to avoid name collisions between services
@@ -168,13 +172,17 @@ public static class AggregatedOpenApiEndpoint
             else
             {
                 foreach (var key in obj.Select(kv => kv.Key).ToList())
+                {
                     RewriteRefs(obj[key], schemaPrefix);
+                }
             }
         }
         else if (node is JsonArray arr)
         {
             for (var i = 0; i < arr.Count; i++)
+            {
                 RewriteRefs(arr[i], schemaPrefix);
+            }
         }
     }
 
@@ -184,12 +192,17 @@ public static class AggregatedOpenApiEndpoint
     /// </summary>
     private static void PrefixOperationIds(JsonNode? pathNode, string schemaPrefix)
     {
-        if (pathNode is not JsonObject pathObj) return;
+        if (pathNode is not JsonObject pathObj)
+        {
+            return;
+        }
 
         foreach (var method in new[] { "get", "post", "put", "patch", "delete", "head", "options" })
         {
             if (pathObj[method] is JsonObject op && op["operationId"] is JsonValue idVal)
+            {
                 op["operationId"] = $"{schemaPrefix}_{idVal.GetValue<string>()}";
+            }
         }
     }
 
@@ -198,42 +211,42 @@ public static class AggregatedOpenApiEndpoint
     // so Scalar can pre-fill them and the user can hit "Send" without typing anything.
     private static readonly Dictionary<string, JsonNode> ParameterExamples = new()
     {
-        ["workspaceId"]    = JsonValue.Create(1)!,
+        ["workspaceId"] = JsonValue.Create(1)!,
         ["organizationId"] = JsonValue.Create(1)!,
-        ["entityId"]       = JsonValue.Create(1)!,
-        ["invitationId"]   = JsonValue.Create(1)!,
-        ["requestId"]      = JsonValue.Create(1)!,
-        ["roleId"]         = JsonValue.Create(1)!,
-        ["memberId"]       = JsonValue.Create(1)!,
-        ["userId"]         = JsonValue.Create(2)!,
-        ["id"]             = JsonValue.Create(1)!,
-        ["q"]              = JsonValue.Create("acme")!,
-        ["entityTypeId"]   = JsonValue.Create(1)!,
-        ["skip"]           = JsonValue.Create(0)!,
-        ["take"]           = JsonValue.Create(50)!,
-        ["f"]              = JsonNode.Parse("""["5:contains:Acme","7:gt:0.5"]""")!,
-        ["sort"]           = JsonNode.Parse("""["7:desc","5:asc"]""")!,
+        ["entityId"] = JsonValue.Create(1)!,
+        ["invitationId"] = JsonValue.Create(1)!,
+        ["requestId"] = JsonValue.Create(1)!,
+        ["roleId"] = JsonValue.Create(1)!,
+        ["memberId"] = JsonValue.Create(1)!,
+        ["userId"] = JsonValue.Create(2)!,
+        ["id"] = JsonValue.Create(1)!,
+        ["q"] = JsonValue.Create("acme")!,
+        ["entityTypeId"] = JsonValue.Create(1)!,
+        ["skip"] = JsonValue.Create(0)!,
+        ["take"] = JsonValue.Create(50)!,
+        ["f"] = JsonNode.Parse("""["5:contains:Acme","7:gt:0.5"]""")!,
+        ["sort"] = JsonNode.Parse("""["7:desc","5:asc"]""")!,
         ["excludeLinkedSourceRelTypeId"] = JsonValue.Create(1)!,
         ["excludeLinkedTargetRelTypeId"] = JsonValue.Create(1)!,
 
         // Audit — GET /audit-log and GET /entities/{entityId}/audit-log (scope filters differ by entity_type)
-        ["entity_type"]       = JsonValue.Create("workspace")!,
-        ["scope"]             = JsonValue.Create("workspace")!,
-        ["date_from"]         = JsonValue.Create("2026-01-01T00:00:00Z")!,
-        ["from"]              = JsonValue.Create("2026-01-01T00:00:00Z")!,
-        ["date_to"]           = JsonValue.Create("2026-05-02T23:59:59Z")!,
-        ["to"]                = JsonValue.Create("2026-05-02T23:59:59Z")!,
-        ["action"]            = JsonValue.Create("update")!,
-        ["index"]             = JsonValue.Create(1)!,
-        ["page_size"]         = JsonValue.Create(20)!,
-        ["entity_id"]         = JsonValue.Create(1)!,
-        ["targetId"]          = JsonValue.Create(1)!,
+        ["entity_type"] = JsonValue.Create("workspace")!,
+        ["scope"] = JsonValue.Create("workspace")!,
+        ["date_from"] = JsonValue.Create("2026-01-01T00:00:00Z")!,
+        ["from"] = JsonValue.Create("2026-01-01T00:00:00Z")!,
+        ["date_to"] = JsonValue.Create("2026-05-02T23:59:59Z")!,
+        ["to"] = JsonValue.Create("2026-05-02T23:59:59Z")!,
+        ["action"] = JsonValue.Create("update")!,
+        ["index"] = JsonValue.Create(1)!,
+        ["page_size"] = JsonValue.Create(20)!,
+        ["entity_id"] = JsonValue.Create(1)!,
+        ["targetId"] = JsonValue.Create(1)!,
         ["domain_entity_type"] = JsonValue.Create("person")!,
-        ["workspace_id"]      = JsonValue.Create(1)!,
-        ["organization_id"]   = JsonValue.Create(1)!,
-        ["actor_user_id"]     = JsonValue.Create(2)!,
-        ["actorUserId"]       = JsonValue.Create(2)!,
-        ["target_user_id"]    = JsonValue.Create(3)!,
+        ["workspace_id"] = JsonValue.Create(1)!,
+        ["organization_id"] = JsonValue.Create(1)!,
+        ["actor_user_id"] = JsonValue.Create(2)!,
+        ["actorUserId"] = JsonValue.Create(2)!,
+        ["target_user_id"] = JsonValue.Create(3)!,
     };
 
     /// <summary>
@@ -250,34 +263,67 @@ public static class AggregatedOpenApiEndpoint
 
         foreach (var (_, pathNode) in mergedPaths)
         {
-            if (pathNode is not JsonObject pathObj) continue;
+            if (pathNode is not JsonObject pathObj)
+            {
+                continue;
+            }
 
             foreach (var method in new[] { "get", "post", "put", "patch", "delete" })
             {
-                if (pathObj[method] is not JsonObject op) continue;
+                if (pathObj[method] is not JsonObject op)
+                {
+                    continue;
+                }
 
                 // ── Path / query parameters ──────────────────────────────────────
                 if (op["parameters"] is JsonArray parameters)
                 {
                     foreach (var param in parameters)
                     {
-                        if (param is not JsonObject paramObj) continue;
-                        if (paramObj["name"] is not JsonValue nameVal) continue;
+                        if (param is not JsonObject paramObj)
+                        {
+                            continue;
+                        }
+
+                        if (paramObj["name"] is not JsonValue nameVal)
+                        {
+                            continue;
+                        }
 
                         var paramName = nameVal.GetValue<string>();
                         if (ParameterExamples.TryGetValue(paramName, out var paramExample))
+                        {
                             paramObj["example"] = JsonNode.Parse(paramExample.ToJsonString())!;
+                        }
                     }
                 }
 
                 // ── Request body ─────────────────────────────────────────────────
-                if (op["operationId"] is not JsonValue idVal) continue;
-                var operationId = idVal.GetValue<string>();
-                if (!bodyExamples.TryGetValue(operationId, out var bodyExample)) continue;
+                if (op["operationId"] is not JsonValue idVal)
+                {
+                    continue;
+                }
 
-                if (op["requestBody"] is not JsonObject reqBody) continue;
-                if (reqBody["content"] is not JsonObject content) continue;
-                if (content["application/json"] is not JsonObject mediaType) continue;
+                var operationId = idVal.GetValue<string>();
+                if (!bodyExamples.TryGetValue(operationId, out var bodyExample))
+                {
+                    continue;
+                }
+
+                if (op["requestBody"] is not JsonObject reqBody)
+                {
+                    continue;
+                }
+
+                if (reqBody["content"] is not JsonObject content)
+                {
+                    continue;
+                }
+
+                if (content["application/json"] is not JsonObject mediaType)
+                {
+                    continue;
+                }
 
                 mediaType["example"] = JsonNode.Parse(bodyExample.ToJsonString())!;
             }
@@ -289,20 +335,20 @@ public static class AggregatedOpenApiEndpoint
         // ── Auth ────────────────────────────────────────────────────────────────
         ["Auth_Login"] = new JsonObject
         {
-            ["email"]    = "admin@relativa.com",
+            ["email"] = "admin@relativa.com",
             ["password"] = "Admin1234!"
         },
         ["Auth_Register"] = new JsonObject
         {
             ["firstName"] = "Jane",
-            ["lastName"]  = "Doe",
-            ["email"]     = "jane.doe@example.com",
-            ["password"]  = "Admin1234!"
+            ["lastName"] = "Doe",
+            ["email"] = "jane.doe@example.com",
+            ["password"] = "Admin1234!"
         },
         ["Auth_UpdateMyProfile"] = new JsonObject
         {
             ["firstName"] = "Jane",
-            ["lastName"]  = "Doe"
+            ["lastName"] = "Doe"
         },
 
         // ── Organizations ───────────────────────────────────────────────────────
@@ -319,14 +365,14 @@ public static class AggregatedOpenApiEndpoint
         ["Core_CreateOrgUser"] = new JsonObject
         {
             ["firstName"] = "Jane",
-            ["lastName"]  = "Doe",
-            ["email"]     = "jane.doe@example.com",
-            ["password"]  = "Admin1234!"
+            ["lastName"] = "Doe",
+            ["email"] = "jane.doe@example.com",
+            ["password"] = "Admin1234!"
         },
         ["Core_UpdateOrgUserProfile"] = new JsonObject
         {
             ["firstName"] = "Jane",
-            ["lastName"]  = "Doe"
+            ["lastName"] = "Doe"
         },
 
         // ── Org invitations ─────────────────────────────────────────────────────
@@ -352,7 +398,7 @@ public static class AggregatedOpenApiEndpoint
         // ── Workspaces ───────────────────────────────────────────────────────────
         ["Core_CreateWorkspace"] = new JsonObject
         {
-            ["name"]           = "Sales Q1 2026",
+            ["name"] = "Sales Q1 2026",
             ["organizationId"] = 1
         },
         ["Core_UpdateWorkspace"] = new JsonObject
@@ -374,24 +420,24 @@ public static class AggregatedOpenApiEndpoint
         // ── Workspace roles ──────────────────────────────────────────────────────
         ["Core_CreateRole"] = new JsonObject
         {
-            ["name"]          = "Custom Role",
+            ["name"] = "Custom Role",
             ["permissionIds"] = new JsonArray(15, 16)   // view_entities, view_analytics
         },
         ["Core_UpdateRole"] = new JsonObject
         {
-            ["name"]          = "Custom Role (updated)",
+            ["name"] = "Custom Role (updated)",
             ["permissionIds"] = new JsonArray(15)
         },
 
         // ── Organization roles ───────────────────────────────────────────────────
         ["Core_CreateOrgRole"] = new JsonObject
         {
-            ["name"]          = "Org Viewer",
+            ["name"] = "Org Viewer",
             ["permissionIds"] = new JsonArray(1, 2)     // view_members, manage_members
         },
         ["Core_UpdateOrgRole"] = new JsonObject
         {
-            ["name"]          = "Org Viewer (updated)",
+            ["name"] = "Org Viewer (updated)",
             ["permissionIds"] = new JsonArray(1)
         },
 
@@ -613,11 +659,17 @@ public static class AggregatedOpenApiEndpoint
     {
         foreach (var (path, pathNode) in mergedPaths)
         {
-            if (pathNode is not JsonObject pathObj) continue;
+            if (pathNode is not JsonObject pathObj)
+            {
+                continue;
+            }
 
             foreach (var method in new[] { "get", "post", "put", "patch", "delete", "head", "options" })
             {
-                if (pathObj[method] is not JsonObject op) continue;
+                if (pathObj[method] is not JsonObject op)
+                {
+                    continue;
+                }
 
                 if (IsAnonymousGatewayOperation(path, method))
                 {
@@ -632,23 +684,33 @@ public static class AggregatedOpenApiEndpoint
     {
         if (path.Equals("/auth/api/v1/auth/login", StringComparison.OrdinalIgnoreCase) &&
             method.Equals("post", StringComparison.OrdinalIgnoreCase))
+        {
             return true;
+        }
 
         if (path.Equals("/auth/api/v1/auth/register", StringComparison.OrdinalIgnoreCase) &&
             method.Equals("post", StringComparison.OrdinalIgnoreCase))
+        {
             return true;
+        }
 
         if (path.Equals("/auth/health", StringComparison.OrdinalIgnoreCase) &&
             method.Equals("get", StringComparison.OrdinalIgnoreCase))
+        {
             return true;
+        }
 
         if (path.Equals("/core/health", StringComparison.OrdinalIgnoreCase) &&
             method.Equals("get", StringComparison.OrdinalIgnoreCase))
+        {
             return true;
+        }
 
         if (path.Equals("/core/api/v1/entity-types", StringComparison.OrdinalIgnoreCase) &&
             method.Equals("get", StringComparison.OrdinalIgnoreCase))
+        {
             return true;
+        }
 
         return false;
     }

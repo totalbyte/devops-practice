@@ -24,15 +24,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["black", "isort", "ruff"]
-
-[tool.black]
-line-length = 88
-target-version = ["py311"]
-
-[tool.isort]
-profile = "black"
+# Ruff is both the linter and the formatter (replaces black + isort).
+dev = ["ruff==0.15.14"]
 
 [tool.ruff]
 line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
 select = ["E", "F", "I", "B"]
+# Line length is owned by `ruff format` (checked in CI); long SQL and user-facing
+# strings that the formatter cannot split are allowed.
+ignore = ["E501"]

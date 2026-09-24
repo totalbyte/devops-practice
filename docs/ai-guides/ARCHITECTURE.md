@@ -1,6 +1,6 @@
 # Architecture -- Patterns, Layers, and Conventions
 
-> **Last verified:** 2026-05-29 (Added `OrganizationSettings` entity (`organization_settings` table, one-to-one with `Organization`); expanded `WorkspaceSettings` with `description` + `risk_scoring_enabled`; 4 new settings endpoints; join-policy enforcement in `JoinRequestService`; frontend settings views.)
+> **Last verified:** 2026-09-23 (Coding conventions: code style is defined once in the root `.editorconfig` and enforced by `dotnet format` in CI; Gateway exposes `public partial class Program` for its test host.)
 
 > **Maintenance obligation:** If you change architecture patterns, add or modify a layer, alter the persistence model, change validation or auth flows, or introduce new cross-cutting concerns, update this file and its "Last verified" date before finishing your task. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -440,4 +440,6 @@ Authorization for workspace endpoints:
 | **Configuration** | Options pattern (`Configure<JwtOptions>`) |
 | **No `Startup.cs`** | All configuration in `Program.cs` (minimal hosting model) |
 | **Target framework** | `net10.0` across all .NET projects |
+| **Code style** | One root `.editorconfig` for all .NET code (per-service copies removed). `dotnet format --verify-no-changes` blocks CI on warnings: formatting, `using` order, braces (IDE0011), unused usings (IDE0005), naming (PascalCase types/public members/constants, `_camelCase` private fields, camelCase parameters/locals). EF `Migrations/` are treated as generated code. |
+| **Test hosts** | Web services end `Program.cs` with `public partial class Program;` so tests can use `WebApplicationFactory<Program>` (Gateway, Graph, Audit). |
 | **Package versioning** | Referenced in `Asp.Versioning.Http` (Authentication) but **not yet used** in code |

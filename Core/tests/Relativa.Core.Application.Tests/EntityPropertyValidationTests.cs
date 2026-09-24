@@ -1,13 +1,17 @@
 using FluentAssertions;
+
 using FluentValidation;
 using FluentValidation.Results;
+
 using Moq;
+
 using Relativa.Core.Application.DTOs.Entity;
 using Relativa.Core.Application.Exceptions;
 using Relativa.Core.Application.Interfaces;
 using Relativa.Core.Application.Services;
 using Relativa.Core.Domain.Interfaces;
 using Relativa.Persistence.Entities;
+
 using Xunit;
 
 namespace Relativa.Core.Application.Tests;
@@ -37,7 +41,13 @@ public sealed class EntityPropertyValidationTests
     {
         var p = new Property { Id = id, Name = name, DataType = type, IsReadonly = readOnly };
         if (allowed is not null)
-            foreach (var a in allowed) p.AllowedValues.Add(new PropertyAllowedValue { PropertyId = id, Value = a });
+        {
+            foreach (var a in allowed)
+            {
+                p.AllowedValues.Add(new PropertyAllowedValue { PropertyId = id, Value = a });
+            }
+        }
+
         return p;
     }
 
@@ -202,7 +212,9 @@ public sealed class EntityPropertyValidationTests
         _entityRepo.Setup(r => r.CreateAsync(It.IsAny<Entity>(), It.IsAny<List<EntityPropertyValue>>(), Ws, It.IsAny<IReadOnlyList<EntityRelationship>?>(), It.IsAny<CancellationToken>())).ReturnsAsync(created);
         _entityRepo.Setup(r => r.GetByIdInWorkspaceAsync(42, Ws, It.IsAny<CancellationToken>())).ReturnsAsync(new Entity
         {
-            Id = 42, EntityTypeId = TypeId, IsArchived = false,
+            Id = 42,
+            EntityTypeId = TypeId,
+            IsArchived = false,
             EntityType = new EntityType { Id = TypeId, Name = "deal" },
             EntityPropertyValues = [],
             SourceRelationships = [],

@@ -1,0 +1,33 @@
+# Vulnerabilities accepted for the blocking Trivy scan in CI (.github/workflows/ci.yaml).
+# One CVE id per line, each group with a comment: why it is accepted and when to revisit.
+# `exp:` makes Trivy enforce the finding again after that date.
+# Findings listed here are still reported in the Security tab via SARIF.
+
+# --- client image: Go standard library inside the esbuild binary ---------------------
+# Path: /app/node_modules/@esbuild/linux-x64/bin/esbuild (esbuild 0.25.12, built with Go 1.23.12).
+# esbuild only runs at dev/build time on our own sources; the affected stdlib packages
+# (net/http, crypto/x509, archive/*, ...) are not reachable from untrusted input there.
+# A newer esbuild requires vite 7+ (major upgrade), planned together with the nginx
+# production image for the client — see docs/ai-guides/PROJECT-STATUS.md "Known Issues".
+CVE-2025-68121 exp:2027-03-31
+CVE-2025-61726 exp:2027-03-31
+CVE-2025-61729 exp:2027-03-31
+CVE-2026-25679 exp:2027-03-31
+CVE-2026-27145 exp:2027-03-31
+CVE-2026-32280 exp:2027-03-31
+CVE-2026-32281 exp:2027-03-31
+CVE-2026-32283 exp:2027-03-31
+CVE-2026-33811 exp:2027-03-31
+CVE-2026-33814 exp:2027-03-31
+CVE-2026-33818 exp:2027-03-31
+CVE-2026-39820 exp:2027-03-31
+CVE-2026-39821 exp:2027-03-31
+CVE-2026-39822 exp:2027-03-31
+CVE-2026-39836 exp:2027-03-31
+CVE-2026-42499 exp:2027-03-31
+CVE-2026-42504 exp:2027-03-31
+CVE-2026-56853 exp:2027-03-31
+CVE-2026-56858 exp:2027-03-31
+CVE-2026-56859 exp:2027-03-31
+CVE-2026-56860 exp:2027-03-31
+CVE-2026-56862 exp:2027-03-31

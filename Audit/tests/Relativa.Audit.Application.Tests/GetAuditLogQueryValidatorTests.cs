@@ -1,6 +1,7 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
+
 using Relativa.Audit.Application.Validators;
+
 using Xunit;
 
 namespace Relativa.Audit.Application.Tests;

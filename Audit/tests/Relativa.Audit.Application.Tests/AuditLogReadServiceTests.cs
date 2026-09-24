@@ -1,14 +1,18 @@
 using FluentAssertions;
+
 using FluentValidation;
 using FluentValidation.Results;
-using Microsoft.Extensions.Options;
+
 using Moq;
+
 using Relativa.Audit.Application.DTOs;
 using Relativa.Audit.Application.Interfaces;
 using Relativa.Audit.Application.Options;
 using Relativa.Audit.Application.Services;
 using Relativa.Audit.Application.Validators;
+
 using Xunit;
+
 using OptionsFactory = Microsoft.Extensions.Options.Options;
 
 namespace Relativa.Audit.Application.Tests;

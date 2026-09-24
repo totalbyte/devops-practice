@@ -1,8 +1,12 @@
 using System.Text.Json;
+
 using FluentValidation;
+
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+
 using Npgsql;
+
 using Relativa.Authentication.Application.Exceptions;
 
 namespace Relativa.Authentication.Middleware;
@@ -45,9 +49,13 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         };
 
         if (statusCode == StatusCodes.Status500InternalServerError)
+        {
             logger.LogError(exception, "Unhandled exception");
+        }
         else
+        {
             logger.LogWarning(exception, "Handled exception: {Title}", title);
+        }
 
         object? errors = exception is ValidationException vex
             ? vex.Errors
@@ -98,7 +106,9 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         for (var ex = exception; ex != null; ex = ex.InnerException!)
         {
             if (ex is PostgresException pg && pg.SqlState == PostgresErrorCodes.UniqueViolation)
+            {
                 return true;
+            }
         }
 
         return false;

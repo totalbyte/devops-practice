@@ -19,6 +19,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Relativa.Audit.Application.Tests", "tests\Relativa.Audit.Application.Tests\Relativa.Audit.Application.Tests.csproj", "{3053B045-2870-4013-BB8C-E9193205DCA2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Relativa.Audit.Integration.Tests", "tests\Relativa.Audit.Integration.Tests\Relativa.Audit.Integration.Tests.csproj", "{D2E72F21-1A9E-4591-B491-FEF018170693}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,6 +103,18 @@ Global
 		{3053B045-2870-4013-BB8C-E9193205DCA2}.Release|x64.Build.0 = Release|Any CPU
 		{3053B045-2870-4013-BB8C-E9193205DCA2}.Release|x86.ActiveCfg = Release|Any CPU
 		{3053B045-2870-4013-BB8C-E9193205DCA2}.Release|x86.Build.0 = Release|Any CPU
+		{D2E72F21-1A9E-4591-B491-FEF018170693}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2E72F21-1A9E-4591-B491-FEF018170693}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2E72F21-1A9E-4591-B491-FEF018170693}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D2E72F21-1A9E-4591-B491-FEF018170693}.Debug|x64.Build.0 = Debug|Any CPU
+		{D2E72F21-1A9E-4591-B491-FEF018170693}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D2E72F21-1A9E-4591-B491-FEF018170693}.Debug|x86.Build.0 = Debug|Any CPU
+		{D2E72F21-1A9E-4591-B491-FEF018170693}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2E72F21-1A9E-4591-B491-FEF018170693}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2E72F21-1A9E-4591-B491-FEF018170693}.Release|x64.ActiveCfg = Release|Any CPU
+		{D2E72F21-1A9E-4591-B491-FEF018170693}.Release|x64.Build.0 = Release|Any CPU
+		{D2E72F21-1A9E-4591-B491-FEF018170693}.Release|x86.ActiveCfg = Release|Any CPU
+		{D2E72F21-1A9E-4591-B491-FEF018170693}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -111,5 +125,6 @@ Global
 		{03963119-0402-48B9-A34C-AD372ADD917B} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{E2110274-6ED3-456B-8292-DCB2BFF9717E} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{3053B045-2870-4013-BB8C-E9193205DCA2} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{D2E72F21-1A9E-4591-B491-FEF018170693} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

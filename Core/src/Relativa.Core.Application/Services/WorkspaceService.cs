@@ -1,5 +1,7 @@
 using System.Text.Json;
+
 using FluentValidation;
+
 using Relativa.Core.Application.Authorization;
 using Relativa.Core.Application.DTOs.Workspace;
 using Relativa.Core.Application.Exceptions;
@@ -33,7 +35,9 @@ public sealed class WorkspaceService(
         var hasPermission = orgMembership.Role?.RolePermissions
             .Any(rp => rp.Permission?.Name == OrganizationPermissions.CreateWorkspaces) ?? false;
         if (!hasPermission)
+        {
             throw new AppException("permission_denied", 403, $"You do not have the '{OrganizationPermissions.CreateWorkspaces}' permission in this organization.");
+        }
 
         var adminRole = await roleRepository.GetSystemRoleWithPermissionsSupersetAsync(
                 WorkspacePermissions.FullWorkspaceAuthority,
@@ -170,7 +174,9 @@ public sealed class WorkspaceService(
     {
         await updateValidator.ValidateAndThrowAsync(request, ct);
         if (!await workspaceAccess.HasWorkspacePermissionAsync(userId, workspaceId, WorkspacePermissions.ManageWsSettings, ct))
+        {
             throw new AppException("permission_denied", 403, $"You do not have the '{WorkspacePermissions.ManageWsSettings}' permission in this workspace.");
+        }
 
         var workspace = await workspaceRepository.GetByIdAsync(workspaceId, ct)
             ?? throw new AppException("workspace_not_found", 404, "Workspace not found.");
@@ -221,8 +227,10 @@ public sealed class WorkspaceService(
             WorkspacePermissions.DeleteWorkspace,
             ct);
         if (!canDeleteWorkspace && !isOrgOwner && !isWsAdminFallback)
-            throw new AppException("archive_workspace_admins_only", 403, 
+        {
+            throw new AppException("archive_workspace_admins_only", 403,
                 "Only workspace admins or organization owners can archive a workspace.");
+        }
 
         var workspace = await workspaceRepository.GetByIdAsync(workspaceId, ct)
             ?? throw new AppException("workspace_not_found", 404, "Workspace not found.");
@@ -302,7 +310,9 @@ public sealed class WorkspaceService(
         await updateSettingsValidator.ValidateAndThrowAsync(request, ct);
 
         if (!await workspaceAccess.HasWorkspacePermissionAsync(userId, workspaceId, WorkspacePermissions.ManageWsSettings, ct))
+        {
             throw new AppException("permission_denied", 403, $"You do not have the '{WorkspacePermissions.ManageWsSettings}' permission in this workspace.");
+        }
 
         var settings = await workspaceSettingsRepository.GetByWorkspaceIdAsync(workspaceId, ct)
             ?? throw new AppException("workspace_settings_not_found", 404, "Workspace settings not found.");

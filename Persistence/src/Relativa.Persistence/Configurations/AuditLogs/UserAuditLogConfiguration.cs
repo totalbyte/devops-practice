@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 using Relativa.Persistence.Entities.AuditLogs;
 
 namespace Relativa.Persistence.Configurations.AuditLogs;

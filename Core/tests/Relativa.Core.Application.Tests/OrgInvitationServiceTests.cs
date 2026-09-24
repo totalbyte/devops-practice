@@ -1,15 +1,18 @@
-using Relativa.Core.Application.Exceptions;
 using FluentAssertions;
+
 using FluentValidation;
 using FluentValidation.Results;
+
 using Moq;
+
 using Relativa.Authentication.Domain.Interfaces;
 using Relativa.Core.Application.DTOs.OrgInvitation;
-using Relativa.Core.Application.Interfaces;
+using Relativa.Core.Application.Exceptions;
 using Relativa.Core.Application.Services;
 using Relativa.Core.Domain.Interfaces;
 using Relativa.Persistence.Contracts;
 using Relativa.Persistence.Entities;
+
 using Xunit;
 
 namespace Relativa.Core.Application.Tests;
@@ -63,7 +66,8 @@ public sealed class OrgInvitationServiceTests
             .Setup(r => r.GetAsync(3, 5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserRoleOrganization
             {
-                UserId = 3, OrganizationId = 5,
+                UserId = 3,
+                OrganizationId = 5,
                 Role = new OrganizationRole { Name = "viewer", RolePermissions = [] }
             });
 
@@ -115,7 +119,8 @@ public sealed class OrgInvitationServiceTests
             .Setup(r => r.GetAsync(1, 5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserRoleOrganization
             {
-                UserId = 1, OrganizationId = 5,
+                UserId = 1,
+                OrganizationId = 5,
                 Role = new OrganizationRole { Name = "viewer", RolePermissions = [] }
             });
 
@@ -218,8 +223,11 @@ public sealed class OrgInvitationServiceTests
     {
         var invitation = new OrganizationInvitation
         {
-            OrganizationId = 3, Email = "u@r.io", Token = "tok",
-            Status = "Pending", ExpiresAt = DateTime.UtcNow.AddDays(-1)
+            OrganizationId = 3,
+            Email = "u@r.io",
+            Token = "tok",
+            Status = "Pending",
+            ExpiresAt = DateTime.UtcNow.AddDays(-1)
         };
         _invitationRepo.Setup(r => r.GetByTokenAsync("tok", It.IsAny<CancellationToken>())).ReturnsAsync(invitation);
 
@@ -236,8 +244,11 @@ public sealed class OrgInvitationServiceTests
     {
         var invitation = new OrganizationInvitation
         {
-            OrganizationId = 3, Email = "u@r.io", Token = "tok",
-            Status = "Pending", ExpiresAt = DateTime.UtcNow.AddDays(3)
+            OrganizationId = 3,
+            Email = "u@r.io",
+            Token = "tok",
+            Status = "Pending",
+            ExpiresAt = DateTime.UtcNow.AddDays(3)
         };
         _invitationRepo.Setup(r => r.GetByTokenAsync("tok", It.IsAny<CancellationToken>())).ReturnsAsync(invitation);
         _orgMemberRepo
@@ -256,8 +267,11 @@ public sealed class OrgInvitationServiceTests
     {
         var invitation = new OrganizationInvitation
         {
-            OrganizationId = 3, Email = "u@r.io", Token = "tok",
-            Status = "Pending", ExpiresAt = DateTime.UtcNow.AddDays(3)
+            OrganizationId = 3,
+            Email = "u@r.io",
+            Token = "tok",
+            Status = "Pending",
+            ExpiresAt = DateTime.UtcNow.AddDays(3)
         };
         var memberRole = new OrganizationRole { Id = 2, Name = "org_member" };
 
@@ -290,7 +304,8 @@ public sealed class OrgInvitationServiceTests
             .Setup(r => r.GetAsync(1, 5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserRoleOrganization
             {
-                UserId = 1, OrganizationId = 5,
+                UserId = 1,
+                OrganizationId = 5,
                 Role = new OrganizationRole { Name = "viewer", RolePermissions = [] }
             });
 
@@ -348,8 +363,11 @@ public sealed class OrgInvitationServiceTests
         const string originalToken = "original_token_abc";
         var invitation = new OrganizationInvitation
         {
-            Id = 10, OrganizationId = 5, Email = "dev@relativa.io",
-            Status = "Pending", Token = originalToken,
+            Id = 10,
+            OrganizationId = 5,
+            Email = "dev@relativa.io",
+            Status = "Pending",
+            Token = originalToken,
             ExpiresAt = DateTime.UtcNow.AddDays(1)
         };
 
@@ -434,7 +452,8 @@ public sealed class OrgInvitationServiceTests
     {
         var caller = new UserRoleOrganization
         {
-            UserId = 1, OrganizationId = 5,
+            UserId = 1,
+            OrganizationId = 5,
             Role = new OrganizationRole
             {
                 Name = "org_admin",
@@ -463,8 +482,11 @@ public sealed class OrgInvitationServiceTests
         var memberRole = new OrganizationRole { Id = 2, Name = "org_member" };
         var expiredExisting = new OrganizationInvitation
         {
-            Id = 5, OrganizationId = 5, Email = "new@relativa.io",
-            Status = "Pending", ExpiresAt = DateTime.UtcNow.AddDays(-3)
+            Id = 5,
+            OrganizationId = 5,
+            Email = "new@relativa.io",
+            Status = "Pending",
+            ExpiresAt = DateTime.UtcNow.AddDays(-3)
         };
 
         _orgMemberRepo.Setup(r => r.GetAsync(1, 5, It.IsAny<CancellationToken>())).ReturnsAsync(OrgMemberWithPermission(1, 5, "invite_to_org"));
@@ -535,7 +557,8 @@ public sealed class OrgInvitationServiceTests
             .Setup(r => r.GetAsync(1, 5, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new UserRoleOrganization
             {
-                UserId = 1, OrganizationId = 5,
+                UserId = 1,
+                OrganizationId = 5,
                 Role = new OrganizationRole { Name = "org_viewer", RolePermissions = [] }
             });
 

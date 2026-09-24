@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Http;
-
 namespace Relativa.Authentication.Endpoints;
 
 public static class ClientIp
