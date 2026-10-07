@@ -103,6 +103,7 @@ public static class AggregatedOpenApiEndpoint
 
         InjectExamples(mergedPaths);
         InjectMlPaths(mergedPaths);
+        InjectGatewayPaths(mergedPaths);
         ApplyGatewaySecurity(mergedPaths);
 
         var securitySchemes = new JsonObject
@@ -645,6 +646,79 @@ public static class AggregatedOpenApiEndpoint
                     ["400"] = new JsonObject { ["description"] = "Invalid request payload" },
                     ["503"] = new JsonObject { ["description"] = "Models unavailable" },
                     ["504"] = new JsonObject { ["description"] = "Batch timeout exceeded" }
+                }
+            }
+        };
+    }
+
+    private static void InjectGatewayPaths(JsonObject mergedPaths)
+    {
+        mergedPaths["/health"] = new JsonObject
+        {
+            ["get"] = new JsonObject
+            {
+                ["tags"] = new JsonArray("Gateway"),
+                ["summary"] = "Gateway liveness",
+                ["operationId"] = "Gateway_Health",
+                ["security"] = new JsonArray(),
+                ["responses"] = new JsonObject
+                {
+                    ["200"] = new JsonObject
+                    {
+                        ["description"] = "Gateway is running",
+                        ["content"] = new JsonObject
+                        {
+                            ["application/json"] = new JsonObject
+                            {
+                                ["schema"] = new JsonObject
+                                {
+                                    ["type"] = "object",
+                                    ["properties"] = new JsonObject
+                                    {
+                                        ["status"] = new JsonObject { ["type"] = "string" },
+                                        ["service"] = new JsonObject { ["type"] = "string" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        mergedPaths["/version"] = new JsonObject
+        {
+            ["get"] = new JsonObject
+            {
+                ["tags"] = new JsonArray("Gateway"),
+                ["summary"] = "Release version and serving instance",
+                ["description"] =
+                    "Returns the release version baked into the image (`dev` for local builds) and the "
+                    + "hostname of the instance that served the request (the pod name in Kubernetes).",
+                ["operationId"] = "Gateway_Version",
+                ["security"] = new JsonArray(),
+                ["responses"] = new JsonObject
+                {
+                    ["200"] = new JsonObject
+                    {
+                        ["description"] = "Version info",
+                        ["content"] = new JsonObject
+                        {
+                            ["application/json"] = new JsonObject
+                            {
+                                ["schema"] = new JsonObject
+                                {
+                                    ["type"] = "object",
+                                    ["properties"] = new JsonObject
+                                    {
+                                        ["service"] = new JsonObject { ["type"] = "string" },
+                                        ["version"] = new JsonObject { ["type"] = "string" },
+                                        ["instance"] = new JsonObject { ["type"] = "string" }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         };

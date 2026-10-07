@@ -1,6 +1,6 @@
 # Docker Setup -- Infrastructure and Deployment
 
-> **Last verified:** 2026-09-23 (Tracked `.dockerignore` per build context; `docker-compose.images.yaml` override for prebuilt GHCR/CI images; `IMAGE_REGISTRY` / `IMAGE_TAG`; Client image is `node:22-alpine`; client also has `develop.watch`.)
+> **Last verified:** 2026-10-07 (Gateway Dockerfile takes `ARG APP_VERSION` → `ENV APP_VERSION`; release image tags `<major>.<minor>.<patch>` usable as `IMAGE_TAG`.)
 
 > **Maintenance obligation:** If you change Docker Compose, Dockerfiles, networking, volumes, or environment variables, update this file and its "Last verified" date before finishing your task. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -115,6 +115,8 @@ Pattern: **multi-stage build**
 | **build** | `mcr.microsoft.com/dotnet/sdk:10.0` | Restores NuGet, publishes in Release mode |
 | **runtime** | `mcr.microsoft.com/dotnet/aspnet:10.0` | Copies published output, sets `ENTRYPOINT` |
 
+**Build arg:** `Gateway/Dockerfile` declares `ARG APP_VERSION=dev` and exports it as `ENV APP_VERSION` (reported by `GET /version`). CI passes the release version; local `docker compose build` leaves it at `dev`.
+
 **Exception:** Migration uses `sdk:10.0` as the runtime image (not `aspnet`) because it is a console host, not a web server.
 
 ### Build context details
@@ -175,7 +177,7 @@ Template for Docker Compose variable substitution. Users copy to `.env` (gitigno
 | `JWT_AUDIENCE` | auth, gateway, audit | Token audience claim |
 
 | `IMAGE_REGISTRY` | `docker-compose.images.yaml` only | Registry namespace of prebuilt images (default `ghcr.io/totalbyte`) |
-| `IMAGE_TAG` | `docker-compose.images.yaml` only | Image tag to run: `latest` (main) or `sha-<7 chars>` |
+| `IMAGE_TAG` | `docker-compose.images.yaml` only | Image tag to run: `latest` (main), `sha-<7 chars>`, or a release version such as `1.0.0` |
 
 ### How env vars reach services
 

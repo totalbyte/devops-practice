@@ -1,6 +1,6 @@
 # Microservices -- Service Catalog
 
-> **Last verified:** 2026-05-29 (Added `PUT /entity-relationships/{id}` endpoint for generic relationship reassignment; also documented existing `POST`/`DELETE` entity-relationship endpoints that were missing from this guide.)
+> **Last verified:** 2026-10-07 (Gateway: anonymous `GET /version` — release version + instance/pod name.)
 
 > **Maintenance obligation:** If you add, remove, or change any endpoint or service, update this file and its "Last verified" date before finishing your task. If you add or remove an entire service, also update [DOCKER-SETUP.md](DOCKER-SETUP.md) and [PROJECT-OVERVIEW.md](PROJECT-OVERVIEW.md). See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -33,10 +33,11 @@
 
 | Method | Path | Auth | Behavior |
 |---|---|---|---|
-| GET | `/health` | None | Returns `{"status":"Healthy","service":"relativa-gateway"}` |
-| GET | `/scalar/v1` | None | Scalar interactive API docs (uses merged `GET /openapi/aggregated.json`, including ML `POST /ml/api/ml/recalculate/` and `POST /ml/api/ml/score/batch`) |
+| GET | `/health` | None | Returns `{"status":"ok","service":"relativa-gateway"}` |
+| GET | `/version` | None | Returns `{"service":"relativa-gateway","version":"<APP_VERSION>","instance":"<hostname>"}`. `version` is baked in at image build (`dev` locally); `instance` is the container hostname = pod name in Kubernetes, used to show load balancing across replicas and rolling updates. |
+| GET | `/scalar/v1` | None | Scalar interactive API docs (uses merged `GET /openapi/aggregated.json`, including ML `POST /ml/api/ml/recalculate/` and `POST /ml/api/ml/score/batch`, plus the Gateway's own anonymous `GET /health` and `GET /version` under the *Gateway* tag) |
 | GET | `/openapi/v1.json` | None | Raw OpenAPI spec |
-| GET | `/openapi/aggregated.json` | None | Merged Auth + Core + Audit + manual ML paths for Scalar |
+| GET | `/openapi/aggregated.json` | None | Merged Auth + Core + Audit + manual ML + Gateway (`/health`, `/version`) paths for Scalar |
 | * | `/auth/{**rest}` | Bearer JWT (anonymous exceptions below) | Proxied to Authentication (8081), prefix `/auth` stripped |
 | * | `/core/{**rest}` | Bearer JWT (anonymous exceptions below) | Proxied to Core (8082), prefix `/core` stripped |
 | * | `/graph/{**rest}` | Bearer JWT | Proxied to Graph (8083), prefix `/graph` stripped |

@@ -12,6 +12,9 @@ WORKDIR /app
 
 COPY --from=build /app/publish .
 
+ARG APP_VERSION=dev
+ENV APP_VERSION=${APP_VERSION}
+
 EXPOSE 8080
 
 ENTRYPOINT ["dotnet", "Relativa.Gateway.dll"]

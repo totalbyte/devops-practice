@@ -163,6 +163,15 @@ try
     app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "relativa-gateway" }))
         .AllowAnonymous();
 
+    var appVersion = builder.Configuration["APP_VERSION"] ?? "dev";
+    app.MapGet("/version", () => Results.Ok(new
+    {
+        service = "relativa-gateway",
+        version = appVersion,
+        instance = Environment.MachineName,
+    }))
+        .AllowAnonymous();
+
     app.UseAuthentication();
     app.UseAuthorization();
 

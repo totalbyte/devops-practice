@@ -1,6 +1,6 @@
 # CI Pipeline -- GitHub Actions, Images, Registry
 
-> **Last verified:** 2026-10-08 (New Trivy findings fixed: Django 5.2, npm removed from the client runtime image.)
+> **Last verified:** 2026-10-08 (Release tags: `v*` git tags publish `<major>.<minor>.<patch>` image tags; `APP_VERSION` build arg; new Trivy findings fixed: Django 5.2, npm removed from the client runtime image.)
 
 > **Maintenance obligation:** If you change `.github/workflows/`, `.github/actions/`, lint configuration (`.editorconfig`, `ML/pyproject.toml` Ruff section, `Client/eslint.config.js`), `.trivyignore`, `.dockerignore` files, or `docker-compose.images.yaml`, update this file and its "Last verified" date before finishing your task. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -47,6 +47,7 @@ flowchart TD
 |---|---|---|
 | `pull_request` (opened, synchronize, reopened, ready_for_review) | into `main`, `release/**` | stage 1, images, e2e + load (skipped for draft PRs), CI result |
 | `push` | `main`, `feature/**`, `release/**` | stage 1, images, **publish**, CI result |
+| `push` of a tag | `v*` (e.g. `v1.0.0`) | stage 1, images, **publish** (release image tags), CI result |
 | `workflow_dispatch` | any | stage 1, images, e2e + load, CI result |
 
 `concurrency` cancels superseded runs of the same PR; pushes are never cancelled (a publish must not be interrupted halfway).
@@ -103,7 +104,7 @@ Matrix over the compose services, using the Dockerfiles from the service folders
 | ml | `ML` | `ML/Dockerfile` |
 | client | `Client` | `Client/Dockerfile` |
 
-Steps: `docker/metadata-action` (tags + OCI labels) → `docker/build-push-action` with `load: true, push: false` and a per-service GitHub Actions layer cache (`type=gha,scope=image-<service>`) → Trivy SARIF report (never fails, uploaded to **Security → Code scanning**, category `trivy-<service>`) → **blocking Trivy scan** (`HIGH,CRITICAL`, `ignore-unfixed: true`, exit code 1) → `docker save | gzip` → artifact.
+Steps: `docker/metadata-action` (tags + OCI labels) → `docker/build-push-action` (build arg `APP_VERSION` = metadata `version` output: the release version on tag pushes, `sha-<7>` otherwise; only the Gateway Dockerfile consumes it so far, see `GET /version`) with `load: true, push: false` and a per-service GitHub Actions layer cache (`type=gha,scope=image-<service>`) → Trivy SARIF report (never fails, uploaded to **Security → Code scanning**, category `trivy-<service>`) → **blocking Trivy scan** (`HIGH,CRITICAL`, `ignore-unfixed: true`, exit code 1) → `docker save | gzip` → artifact.
 
 **Accepting a finding:** add the CVE id to `.trivyignore` with a comment explaining why, plus `exp:YYYY-MM-DD` so the scan blocks again after that date. Prefer bumping the package or base image instead. Currently accepted: the Go stdlib CVEs inside the client's esbuild 0.25 binary (dev/build-time tool, expires 2027-03-31).
 
@@ -121,7 +122,15 @@ Runs only for `push` events (never for pull requests), after **all** image legs 
 - Auth: `docker/login-action` with the built-in `GITHUB_TOKEN`; the job requests `packages: write`. No credentials are stored in the repository.
 - Tags:
   - `sha-<7 chars>` -- every pushed commit, unique per build;
-  - `latest` -- only when the push is to the default branch (`main`).
+  - `latest` -- only when the push is to the default branch (`main`);
+  - `<major>.<minor>.<patch>` -- only for a pushed git tag `v<major>.<minor>.<patch>` (`type=semver`), e.g. `v1.1.0` → `1.1.0`. These immutable release tags are what the Kubernetes manifests pin.
+
+Cutting a release (the tagged commit must already contain this workflow):
+
+```bash
+git tag v1.1.0
+git push origin v1.1.0
+```
 - The step summary lists every pushed tag.
 
 Verify a published build locally:
