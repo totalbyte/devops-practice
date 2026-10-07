@@ -1,6 +1,6 @@
 # CI Pipeline -- GitHub Actions, Images, Registry
 
-> **Last verified:** 2026-10-08 (Release tags: `v*` git tags publish `<major>.<minor>.<patch>` image tags; `APP_VERSION` build arg; new Trivy findings fixed: Django 5.2, npm removed from the client runtime image.)
+> **Last verified:** 2026-10-08 (Release tags: `v*` git tags publish `<major>.<minor>.<patch>` image tags; `APP_VERSION` build arg consumed by Gateway and Client; new Trivy findings fixed: Django 5.2, npm removed from the client image.)
 
 > **Maintenance obligation:** If you change `.github/workflows/`, `.github/actions/`, lint configuration (`.editorconfig`, `ML/pyproject.toml` Ruff section, `Client/eslint.config.js`), `.trivyignore`, `.dockerignore` files, or `docker-compose.images.yaml`, update this file and its "Last verified" date before finishing your task. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -104,7 +104,7 @@ Matrix over the compose services, using the Dockerfiles from the service folders
 | ml | `ML` | `ML/Dockerfile` |
 | client | `Client` | `Client/Dockerfile` |
 
-Steps: `docker/metadata-action` (tags + OCI labels) → `docker/build-push-action` (build arg `APP_VERSION` = metadata `version` output: the release version on tag pushes, `sha-<7>` otherwise; only the Gateway Dockerfile consumes it so far, see `GET /version`) with `load: true, push: false` and a per-service GitHub Actions layer cache (`type=gha,scope=image-<service>`) → Trivy SARIF report (never fails, uploaded to **Security → Code scanning**, category `trivy-<service>`) → **blocking Trivy scan** (`HIGH,CRITICAL`, `ignore-unfixed: true`, exit code 1) → `docker save | gzip` → artifact.
+Steps: `docker/metadata-action` (tags + OCI labels) → `docker/build-push-action` (build arg `APP_VERSION` = metadata `version` output: the release version on tag pushes, `sha-<7>` otherwise; consumed by the Gateway (`GET /version`) and Client (version in the auth-page footer) Dockerfiles) with `load: true, push: false` and a per-service GitHub Actions layer cache (`type=gha,scope=image-<service>`) → Trivy SARIF report (never fails, uploaded to **Security → Code scanning**, category `trivy-<service>`) → **blocking Trivy scan** (`HIGH,CRITICAL`, `ignore-unfixed: true`, exit code 1) → `docker save | gzip` → artifact.
 
 **Accepting a finding:** add the CVE id to `.trivyignore` with a comment explaining why, plus `exp:YYYY-MM-DD` so the scan blocks again after that date. Prefer bumping the package or base image instead. Currently accepted: the Go stdlib CVEs inside the client's esbuild 0.25 binary (dev/build-time tool, expires 2027-03-31).
 
