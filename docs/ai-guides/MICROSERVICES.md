@@ -16,7 +16,7 @@
 | Graph | 8083 | .NET 10, SignalR, RabbitMQ | Functional — `GET /api/v1/graph` (RBAC-filtered user-centric graph), `POST .../entity-graph/create` (RPC to Core), SignalR hub, workspace choreography consumer |
 | Audit | 8086 | .NET 10, EF Core, RabbitMQ | Functional |
 | Migration | -- | .NET 10, EF Core (console) | Functional |
-| ML | 8084 | Django 5.1, DRF, pika | Functional batch scoring (RabbitMQ RPC from Graph) + choreography subscriber |
+| ML | 8084 | Django 5.2, DRF, pika | Functional batch scoring (RabbitMQ RPC from Graph) + choreography subscriber |
 | Client | 3000 | Vue 3, Vite | Scaffold |
 
 ---
@@ -374,7 +374,7 @@ None -- this is a console application, not a web service.
 
 **Purpose:** Machine learning service for scoring deals (closure probability, churn risk). Built on Django + DRF with on-demand batch scoring and RabbitMQ-driven freshness updates.
 
-**Stack:** Python 3.12, Django 5.1, Django REST Framework, scikit-learn (`.pkl` models loaded at startup), Celery + Redis (configured but inactive), pika (RabbitMQ choreography consumer)
+**Stack:** Python 3.12, Django 5.2, Django REST Framework, scikit-learn (`.pkl` models loaded at startup), Celery + Redis (configured but inactive), pika (RabbitMQ choreography consumer)
 **Project:** `ML/`
 **Port:** 8084
 

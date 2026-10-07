@@ -1,6 +1,6 @@
 # CI Pipeline -- GitHub Actions, Images, Registry
 
-> **Last verified:** 2026-09-23 (New pipeline: per-service lint/build/test, image build + Trivy scan, GHCR publish, E2E/k6 on the built images, branch protection; check names / `needs` as a branch-protection contract.)
+> **Last verified:** 2026-10-08 (New Trivy findings fixed: Django 5.2, npm removed from the client runtime image.)
 
 > **Maintenance obligation:** If you change `.github/workflows/`, `.github/actions/`, lint configuration (`.editorconfig`, `ML/pyproject.toml` Ruff section, `Client/eslint.config.js`), `.trivyignore`, `.dockerignore` files, or `docker-compose.images.yaml`, update this file and its "Last verified" date before finishing your task. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -107,7 +107,7 @@ Steps: `docker/metadata-action` (tags + OCI labels) → `docker/build-push-actio
 
 **Accepting a finding:** add the CVE id to `.trivyignore` with a comment explaining why, plus `exp:YYYY-MM-DD` so the scan blocks again after that date. Prefer bumping the package or base image instead. Currently accepted: the Go stdlib CVEs inside the client's esbuild 0.25 binary (dev/build-time tool, expires 2027-03-31).
 
-Fixes already applied so every image passes the gate: `Microsoft.AspNetCore.OpenApi` 10.0.12 (pulls a patched `Microsoft.OpenApi`), `pip` removed from the ML runtime image, npm 11 in the client image, client dependencies refreshed with `npm update`.
+Fixes already applied so every image passes the gate: `Microsoft.AspNetCore.OpenApi` 10.0.12 (pulls a patched `Microsoft.OpenApi`), `pip` removed from the ML runtime image, Django 5.2 LTS (≥ 5.2.17, CVE-2026-15307), npm removed from the client runtime image after `npm ci` (its bundled brace-expansion/undici were flagged), client dependencies refreshed with `npm update`.
 
 **Build context hygiene:** every build context has a tracked `.dockerignore` (repo root, `Gateway/`, `Client/`, `ML/`) so host `bin/`, `obj/`, `node_modules/`, `.venv/`, and `.env` never reach an image.
 

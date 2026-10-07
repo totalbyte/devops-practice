@@ -1,6 +1,6 @@
 # relativa-ml
 
-ML-мікросервіс на **Django 5.1**. Структуру проєкту створено через `django-admin startproject`; додаток **`ml_api`** — через `startapp`.
+ML-мікросервіс на **Django 5.2**. Структуру проєкту створено через `django-admin startproject`; додаток **`ml_api`** — через `startapp`.
 
 ## Порт
 
@@ -8,7 +8,7 @@ ML-мікросервіс на **Django 5.1**. Структуру проєкту
 
 ## Стек
 
-- **Django 5.1**, **Django REST framework**
+- **Django 5.2**, **Django REST framework**
 - **Celery** + **Redis** (broker/result URL у `settings.py`; розклад beat закоментовано — нічний cron **02:00 UTC** потрібно прив’язати до реального модуля задач)
 - **scikit-learn** (для майбутніх `closure_score` / `churn_score`)
 

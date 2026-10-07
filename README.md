@@ -20,7 +20,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/.NET-10.0-2F5BEA?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 10">
   <img src="https://img.shields.io/badge/Vue.js-3-2F5BEA?style=flat-square&logo=vuedotjs&logoColor=white" alt="Vue 3">
-  <img src="https://img.shields.io/badge/Django-5.1-2F5BEA?style=flat-square&logo=django&logoColor=white" alt="Django 5.1">
+  <img src="https://img.shields.io/badge/Django-5.2-2F5BEA?style=flat-square&logo=django&logoColor=white" alt="Django 5.2">
   <img src="https://img.shields.io/badge/PostgreSQL-16-2F5BEA?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL 16">
   <img src="https://img.shields.io/badge/RabbitMQ-3.13-2F5BEA?style=flat-square&logo=rabbitmq&logoColor=white" alt="RabbitMQ 3.13">
   <img src="https://img.shields.io/badge/Docker-Compose-2F5BEA?style=flat-square&logo=docker&logoColor=white" alt="Docker Compose">

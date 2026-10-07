@@ -1,6 +1,6 @@
 # Project Status -- What is Done and What is Not
 
-> **Last verified:** 2026-09-23 (CI/CD pipeline implemented — see [CI-PIPELINE.md](CI-PIPELINE.md); Gateway, Migration, and Client test suites added; ML happy-path test fixed; known issues refreshed.)
+> **Last verified:** 2026-10-08 (Client image starts Vite directly. Earlier: 2026-09-23 — CI/CD pipeline implemented — see [CI-PIPELINE.md](CI-PIPELINE.md); Gateway, Migration, and Client test suites added; ML happy-path test fixed; known issues refreshed.)
 
 > **Maintenance obligation:** If you implement a feature that was listed as stub or TODO, move it to the "Implemented" section. If you introduce a new known issue or break something, add it to "Known Issues." Always update the "Last verified" date. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -194,7 +194,7 @@
 | **Gateway README partially outdated** | Low | `Gateway/README.md` says JWT validation is a stub. Gateway now fully validates JWT. |
 | **Unused package reference** | Trivial | `Asp.Versioning.Http` is referenced in `Authentication/src/Relativa.Authentication/Relativa.Authentication.csproj` but never used in code. |
 | **Core CORS is `AllowAnyOrigin`** | Low | Gateway now has a proper named-origin CORS allowlist (reads `Cors:Origins` from config). Core retains `AllowAnyOrigin/Header/Method` as a dev convenience since Core is only reached via the gateway in deployed environments; tighten for production. |
-| **Client image runs the Vite dev server** | Medium | `Client/Dockerfile` starts `npm run dev` with dev dependencies instead of serving the `vite build` output (e.g. multi-stage build → nginx). Fine for local compose and CI E2E, not for production. Its esbuild 0.25 binary (Go 1.23 stdlib CVEs) is accepted in `.trivyignore` until 2027-03-31; fix together with a vite 7+ upgrade and the nginx image. |
+| **Client image runs the Vite dev server** | Medium | `Client/Dockerfile` starts the Vite dev server (`node_modules/.bin/vite`) with dev dependencies instead of serving the `vite build` output (e.g. multi-stage build → nginx). Fine for local compose and CI E2E, not for production. Its esbuild 0.25 binary (Go 1.23 stdlib CVEs) is accepted in `.trivyignore` until 2027-03-31; fix together with a vite 7+ upgrade and the nginx image. |
 | **ML model pickles pinned loosely** | Low | `closure_model.pkl` / `churn_model.pkl` were saved with scikit-learn 1.9.0, but `ML/pyproject.toml` allows `>=1.9,<1.10`; newer patch versions log `InconsistentVersionWarning` on load. |
 | **Moderate advisories in MailKit/MimeKit 4.11.0** | Low | Reported by NuGet audit for Core and Authentication; below the CI Trivy gate (HIGH/CRITICAL). Bump when convenient. |
 | **ML reads the host-mapped `DB_PORT` inside the container** | Medium | `docker-compose.yaml` passes `DB_PORT: ${DB_PORT}` (the *host* port of Postgres) to `ml`, and `ML/relativa_ml/settings.py` uses it to reach `postgres` on the internal network. Works only while `DB_PORT=5432`; changing it in `.env` to avoid a local port clash breaks ML's DB connection. Pass the container port (5432) instead. |

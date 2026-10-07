@@ -146,7 +146,7 @@ Each build context has a tracked `.dockerignore`, so host build output never rea
 | Dockerfile | Base image | Notes |
 |---|---|---|
 | `ML/Dockerfile` | `python:3.12-slim` | Installs editable package, then uninstalls `pip` (not needed at runtime; its vendored packages were flagged by Trivy); **`scripts/run_api_and_consumer.sh`** runs `manage.py run_domain_consumer` concurrently with Django `runserver` |
-| `Client/Dockerfile` | `node:22-alpine` | Upgrades the bundled npm 10 to npm 11 (fixes pacote/sigstore/tar advisories), `npm ci`, runs `npm run dev -- --host 0.0.0.0 --port 3000` (dev server, see PROJECT-STATUS known issues) |
+| `Client/Dockerfile` | `node:22-alpine` | `npm ci`, then removes npm/npx from the image (not needed at runtime; its vendored packages were flagged by Trivy); runs `node_modules/.bin/vite --host 0.0.0.0 --port 3000` (dev server, see PROJECT-STATUS known issues) |
 
 ---
 

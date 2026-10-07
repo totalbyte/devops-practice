@@ -1,16 +1,14 @@
 FROM node:22-alpine AS base
-# The npm bundled with node:22 (10.x) ships vulnerable pacote/sigstore/tar;
-# npm 11 is supported on Node >= 22.9.
-RUN apk add --no-cache curl \
-    && npm install --global npm@11 --no-audit --no-fund \
-    && npm cache clean --force
+RUN apk add --no-cache curl
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci \
+    && npm cache clean --force \
+    && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx
 
 COPY . .
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
+CMD ["node_modules/.bin/vite", "--host", "0.0.0.0", "--port", "3000"]
