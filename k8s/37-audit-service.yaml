@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit
+  namespace: antoniuk
+  labels:
+    app.kubernetes.io/name: audit
+    app.kubernetes.io/part-of: relativa
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: audit
+  ports:
+    - name: http
+      port: 8086
+      targetPort: http

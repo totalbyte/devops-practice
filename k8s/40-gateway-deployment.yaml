@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: antoniuk
+  labels:
+    app.kubernetes.io/name: gateway
+    app.kubernetes.io/component: api-gateway
+    app.kubernetes.io/part-of: relativa
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gateway
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gateway
+        app.kubernetes.io/component: api-gateway
+        app.kubernetes.io/part-of: relativa
+    spec:
+      containers:
+        - name: gateway
+          image: ghcr.io/totalbyte/relativa-gateway:1.0.0
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: relativa-config
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: relativa-secrets
+                  key: JWT_SECRET
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+            - name: Jwt__SecretKey
+              value: $(JWT_SECRET)
+            - name: Jwt__Issuer
+              value: $(JWT_ISSUER)
+            - name: Jwt__Audience
+              value: $(JWT_AUDIENCE)
+            - name: Cors__Origins__0
+              value: $(CORS_ORIGIN)
+            - name: Cors__AllowAnyOriginForDev
+              value: "false"
+            - name: Gateway__PublicBaseUrl
+              value: $(GATEWAY_PUBLIC_URL)
+            - name: ReverseProxy__Clusters__auth__Destinations__d1__Address
+              value: http://auth:8081/
+            - name: ReverseProxy__Clusters__core__Destinations__d1__Address
+              value: http://core:8082/
+            - name: ReverseProxy__Clusters__graph__Destinations__d1__Address
+              value: http://graph:8083/
+            - name: ReverseProxy__Clusters__ml__Destinations__d1__Address
+              value: http://ml:8084/
+            - name: ReverseProxy__Clusters__audit__Destinations__d1__Address
+              value: http://audit:8086/
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            timeoutSeconds: 3
+            failureThreshold: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
