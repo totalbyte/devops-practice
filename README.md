@@ -45,6 +45,7 @@
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Quick Start](#quick-start)
+- [Kubernetes Deployment](#kubernetes-deployment)
 - [Environment Configuration](#environment-configuration)
 - [Database & Seed Data](#database--seed-data)
 - [API Documentation](#api-documentation)
@@ -329,6 +330,64 @@ Then open **http://localhost:3000** and register your first account. 🎉
 
 ---
 
+## Kubernetes Deployment
+
+The same stack runs in a local **minikube** cluster from the manifests in [`k8s/`](k8s/) (one object per file), using the release images CI publishes to GHCR (`ghcr.io/totalbyte/relativa-<service>:1.0.0`). Everything lives in the namespace **`antoniuk`**.
+
+### Deploy
+
+```powershell
+minikube start --driver=docker --cpus=4 --memory=6144
+minikube addons enable metrics-server
+minikube addons enable ingress
+kubectl apply -f k8s/
+kubectl get pods -n antoniuk -w
+minikube tunnel
+```
+
+Add `127.0.0.1 relativa.local api.relativa.local mail.relativa.local` to the hosts file, then open **http://relativa.local** (API: `http://api.relativa.local`, mail inbox: `http://mail.relativa.local`).
+
+`kubectl apply -f k8s/` brings the stack up from scratch in this order (numbered files + init containers, ~3–4 min):
+
+1. Namespace, ConfigMap, Secret, RBAC for the migration waiter.
+2. `postgres` (on a 2Gi PersistentVolumeClaim), `rabbitmq`, `mailhog`.
+3. Job `migration` — waits for Postgres, applies EF migrations and seed data.
+4. `auth`, `core`, `graph`, `audit`, `ml` — init containers wait for the migration Job to complete and for RabbitMQ.
+5. `gateway`, `client`, and the Ingress (`relativa.local` → client, `api.relativa.local` → gateway, `mail.relativa.local` → MailHog).
+
+Each application service runs **2 replicas** with resource requests/limits, readiness and liveness probes, and a zero-downtime `RollingUpdate` (`maxUnavailable: 0`).
+
+### ConfigMap `relativa-config`
+
+| Key | Value | Purpose |
+|---|---|---|
+| `ASPNETCORE_ENVIRONMENT` | `Development` | .NET hosting environment |
+| `DB_HOST` / `DB_PORT` | `postgres` / `5432` | PostgreSQL Service name and port |
+| `DB_NAME` / `DB_USER` | `relativa` / `relativa` | Database and user |
+| `RABBITMQ_HOST` / `RABBITMQ_PORT` | `rabbitmq` / `5672` | RabbitMQ Service name and AMQP port |
+| `RABBITMQ_USER` | `relativa` | RabbitMQ user |
+| `JWT_ISSUER` / `JWT_AUDIENCE` | `relativa-auth` / `relativa` | JWT claims (auth, gateway, audit) |
+| `SMTP_HOST` / `SMTP_PORT` | `mailhog` / `1025` | Outgoing mail (MailHog) |
+| `SMTP_FROM_ADDRESS` / `SMTP_FROM_NAME` / `SMTP_USE_SSL` | `noreply@relativa.com` / `Relativa` / `false` | Sender settings |
+| `APP_FRONTEND_BASE_URL` | `http://relativa.local` | Links in emails |
+| `CORS_ORIGIN` | `http://relativa.local` | Browser origin allowed by the gateway |
+| `GATEWAY_PUBLIC_URL` | `http://api.relativa.local` | Public gateway URL (Scalar) |
+| `VITE_GATEWAY_URL` | `http://api.relativa.local` | Gateway URL the SPA calls |
+
+### Secret `relativa-secrets`
+
+| Key | Purpose |
+|---|---|
+| `DB_PASS` | PostgreSQL password |
+| `RABBITMQ_PASS` | RabbitMQ password |
+| `JWT_SECRET` | JWT signing key (HMAC-SHA256) |
+
+The committed values are **development-only placeholders**, not real credentials. Containers receive ConfigMap keys via `envFrom` and secrets via `secretKeyRef`; .NET settings such as `ConnectionStrings__Default` are composed from them with `$(VAR)` references.
+
+📖 Full walkthrough: [KUBERNETES-DEPLOY.md](KUBERNETES-DEPLOY.md) · Architecture: [docs/ai-guides/KUBERNETES.md](docs/ai-guides/KUBERNETES.md) · Lab 3 demo commands: [docs/runbooks/KUBERNETES-DEMO.md](docs/runbooks/KUBERNETES-DEMO.md)
+
+---
+
 ## Environment Configuration
 
 Configuration is driven by a single `.env` file at the repo root. Copy the template and adjust as needed:
@@ -419,11 +478,13 @@ Every backend service ships interactive **Scalar** API docs and a raw OpenAPI sp
 |---|---|
 | [SETUP-GUIDE.md](SETUP-GUIDE.md) | Prerequisites, system requirements, database setup |
 | [DOCKER-BUILD.md](DOCKER-BUILD.md) | Local Docker manual — start, stop, troubleshoot |
+| [KUBERNETES-DEPLOY.md](KUBERNETES-DEPLOY.md) | Kubernetes (minikube) manual — deploy, access, update, troubleshoot |
 | [DATABASE.md](DATABASE.md) | Full schema, EAV model, RBAC, audit tables |
 | [SCALAR-GUIDE.md](SCALAR-GUIDE.md) | Interactive API walkthrough |
 | [docs/USER-GUIDE.md](docs/USER-GUIDE.md) | End-user scenarios for every feature |
 | [AI-GUIDES-INDEX.md](AI-GUIDES-INDEX.md) | Deep technical guides (architecture, microservices, runbooks) |
 | [docs/ai-guides/CI-PIPELINE.md](docs/ai-guides/CI-PIPELINE.md) | CI pipeline: lint/build/test per service, image scanning, GHCR publishing, required checks |
+| [docs/ai-guides/KUBERNETES.md](docs/ai-guides/KUBERNETES.md) | Kubernetes manifests: topology, start-up order, config, probes, affinity |
 
 ---
 

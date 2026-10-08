@@ -1,6 +1,6 @@
 # Project Status -- What is Done and What is Not
 
-> **Last verified:** 2026-10-08 (Client image starts Vite directly. Earlier: 2026-09-23 — CI/CD pipeline implemented — see [CI-PIPELINE.md](CI-PIPELINE.md); Gateway, Migration, and Client test suites added; ML happy-path test fixed; known issues refreshed.)
+> **Last verified:** 2026-10-08 (Kubernetes deployment via `k8s/` on minikube — see [KUBERNETES.md](KUBERNETES.md); client image starts Vite directly. Earlier: 2026-09-23 — CI/CD pipeline implemented — see [CI-PIPELINE.md](CI-PIPELINE.md); Gateway, Migration, and Client test suites added; ML happy-path test fixed; known issues refreshed.)
 
 > **Maintenance obligation:** If you implement a feature that was listed as stub or TODO, move it to the "Implemented" section. If you introduce a new known issue or break something, add it to "Known Issues." Always update the "Last verified" date. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -119,6 +119,13 @@
 - Pull requests additionally run Playwright E2E and the k6 load test (`tests/load/relativa.js`, replaces NBomber) against the freshly built images via `docker-compose.images.yaml`.
 - New test suites added with the pipeline: `Gateway/tests/Relativa.Gateway.Tests` (JWT, prefix stripping, identity-header spoofing, CORS), `Migration/tests/Relativa.Migration.Tests` (EF model vs. migrations), Client Vitest specs (`src/**/__tests__`). ML `test_happy_path_scores` fixed (it predated the missing-input diagnosis). Integration suites now use the default Testcontainers Postgres readiness check instead of a port check (removed `57P03` flakiness).
 - Details, required checks, and local commands: [CI-PIPELINE.md](CI-PIPELINE.md).
+
+### Kubernetes (minikube)
+
+- `k8s/`: full stack in namespace `antoniuk`, one object per file, deployed with `kubectl apply -f k8s/` from scratch.
+- 7 app Deployments × 2 replicas on release images (`1.0.0`), requests/limits, readiness + liveness probes, zero-downtime `RollingUpdate`; Postgres on a PVC; migrations as a Job; init containers replace `depends_on`.
+- ConfigMap `relativa-config` + Secret `relativa-secrets` (dev values); Ingress with `relativa.local` / `api.relativa.local` / `mail.relativa.local`; cookie + ClientIP affinity for SignalR.
+- Verified: self-healing, scaling, rolling update 1.0.0 → 1.1.0 and rollback with 0 failed requests (k6), ImagePullBackOff diagnosis. Details: [KUBERNETES.md](KUBERNETES.md), [KUBERNETES-DEPLOY.md](../../KUBERNETES-DEPLOY.md).
 
 ### Docker Compose
 
@@ -271,7 +278,8 @@
 
 - ~~CI/CD pipeline (GitHub Actions or similar).~~ *(done — see [CI-PIPELINE.md](CI-PIPELINE.md))*
 - ~~Test projects (at minimum: unit tests for Application services, integration tests for API endpoints).~~ *(done — every service has a test suite that runs in CI)*
-- Deployment stage (CD) consuming the GHCR images.
+- Deployment stage (CD) consuming the GHCR images. *(partial — `k8s/` deploys the release images to a local minikube cluster by hand; no automated deploy from CI.)*
+- SignalR backplane (e.g. Redis) so Core/Graph hubs broadcast across replicas in Kubernetes.
 - Client production image: multi-stage `vite build` → nginx, plus vite 7+ upgrade (removes the esbuild entries from `.trivyignore`, which expire 2027-03-31).
 - Extend Dependabot from GitHub Actions to NuGet, npm, and pip.
 - Production-ready CORS configuration.
