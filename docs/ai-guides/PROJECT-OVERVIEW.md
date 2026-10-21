@@ -1,6 +1,6 @@
 # Project Overview -- What is Relativa?
 
-> **Last verified:** 2026-09-23 (CI/CD + testing rows in the tech stack; repo layout shows workflows, test projects, and CI-related root files.)
+> **Last verified:** 2026-10-08 (ML on Django 5.2 LTS; Kubernetes manifests in `k8s/`, KUBERNETES-DEPLOY.md.) Earlier: 2026-09-23 (CI/CD + testing rows in the tech stack; repo layout shows workflows, test projects, and CI-related root files.)
 
 > **Maintenance obligation:** If you change the general purpose, domain model, tech stack, or repo layout, update this file and its "Last verified" date before finishing your task. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -52,7 +52,7 @@ The domain model lives entirely in the shared Persistence library (`Persistence/
 | Backend services | ASP.NET Core 10, Minimal APIs |
 | API gateway | YARP (Yet Another Reverse Proxy) on ASP.NET Core 10 |
 | Real-time | SignalR (Graph service) |
-| ML service | Django 5.1, Django REST Framework, scikit-learn, Celery + Redis (planned) |
+| ML service | Django 5.2, Django REST Framework, scikit-learn, Celery + Redis (planned) |
 | Frontend | Vue 3 + Vite + TypeScript, Pinia, Vue Router, PrimeVue 4 (Aura), Tailwind CSS 3, vis-network (graph placeholder) |
 | Database | PostgreSQL 16 |
 | ORM | Entity Framework Core 10 + Npgsql |
@@ -61,6 +61,7 @@ The domain model lives entirely in the shared Persistence library (`Persistence/
 | Logging | Serilog (console + rolling file) |
 | API docs | OpenAPI + Scalar |
 | Containerization | Docker Compose (single bridge network); images published to GHCR |
+| Orchestration | Kubernetes manifests in `k8s/` (minikube, ingress-nginx) -- see [KUBERNETES.md](KUBERNETES.md) |
 | CI/CD | GitHub Actions (`.github/workflows/ci.yaml`), Trivy image scanning, Dependabot for action pins -- see [CI-PIPELINE.md](CI-PIPELINE.md) |
 | Code quality | `dotnet format` + root `.editorconfig`, Ruff (ML), ESLint + `vue-tsc` (Client) |
 | Testing | xUnit + Testcontainers (.NET), Django test runner (ML), Vitest (Client), Playwright (E2E), k6 (load) |
@@ -83,6 +84,8 @@ Relativa/
 ├── .trivyignore                # Accepted image vulnerabilities (with reasons)
 ├── docker-compose.yaml         # Full stack definition
 ├── docker-compose.images.yaml  # Override: run the stack from prebuilt (GHCR/CI) images
+├── KUBERNETES-DEPLOY.md        # Operational Kubernetes (minikube) guide
+├── k8s/                        # Kubernetes manifests, one object per file (kubectl apply -f k8s/)
 │
 ├── Gateway/                    # YARP reverse proxy (.NET 10)
 │   ├── src/Relativa.Gateway/
@@ -120,7 +123,9 @@ Relativa/
 │   └── relativa_ml/            # ML package (future models)
 ├── tests/
 │   ├── e2e/                    # Playwright UI tests (run in CI on pull requests)
-│   └── load/relativa.js        # k6 load test (smoke/ramp/spike/soak profiles)
+│   └── load/
+│       ├── relativa.js         # k6 load test (smoke/ramp/spike/soak profiles)
+│       └── rollout-availability.js  # k6 availability check during a Kubernetes rollout
 ├── TestR/                      # Local PowerShell test runner (TestR.bat)
 └── .github/
     ├── workflows/ci.yaml       # CI pipeline (see CI-PIPELINE.md)
@@ -138,6 +143,8 @@ Relativa/
 | File | Scope | Notes |
 |---|---|---|
 | `DOCKER-BUILD.md` | Operational Docker guide | Current and accurate. |
+| `KUBERNETES-DEPLOY.md` | Operational Kubernetes (minikube) guide | Current and accurate. |
+| `docs/runbooks/KUBERNETES-LAB3.md` | Lab 3 demo commands (Ukrainian), step by step | Current. |
 | `docs/runbooks/RABBITMQ-CHOREOGRAPHY.md` | Rabbit choreography + DLQ operations | Describes exchanges, purge commands, idempotency table |
 | `SCALAR-GUIDE.md` | Scalar API docs walkthrough | Current and accurate. |
 | `CONTRIBUTORS.md` | Contributor list | -- |

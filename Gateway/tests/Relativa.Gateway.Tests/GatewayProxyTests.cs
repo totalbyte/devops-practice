@@ -18,6 +18,33 @@ public sealed class GatewayProxyTests(GatewayFactory factory) : IClassFixture<Ga
     }
 
     [Fact]
+    public async Task Version_IsAnonymous_AndReportsInstance()
+    {
+        var response = await _client.GetAsync("/version");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+        Assert.NotNull(body);
+        Assert.Equal("relativa-gateway", body["service"]);
+        Assert.False(string.IsNullOrEmpty(body["version"]));
+        Assert.Equal(Environment.MachineName, body["instance"]);
+    }
+
+    [Fact]
+    public async Task AggregatedOpenApi_ListsGatewayEndpointsAsAnonymous()
+    {
+        var spec = await _client.GetFromJsonAsync<System.Text.Json.Nodes.JsonObject>("/openapi/aggregated.json");
+
+        var paths = spec!["paths"]!.AsObject();
+        foreach (var path in new[] { "/health", "/version" })
+        {
+            var operation = paths[path]!["get"]!;
+            Assert.Equal("Gateway", operation["tags"]![0]!.GetValue<string>());
+            Assert.Empty(operation["security"]!.AsArray());
+        }
+    }
+
+    [Fact]
     public async Task ProtectedRoute_WithoutToken_Returns401()
     {
         var response = await _client.GetAsync("/core/api/v1/workspaces");

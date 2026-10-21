@@ -28,6 +28,7 @@ name: CI
 on:
   push:
     branches: [main, 'feature/**', 'release/**']
+    tags: ['v*']
   pull_request:
     branches: [main, 'release/**']
     types: [opened, synchronize, reopened, ready_for_review]
@@ -250,8 +251,9 @@ jobs:
         with:
           images: ${{ env.IMAGE }}
           tags: |
+            type=semver,pattern={{version}}
             type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable={{is_default_branch}},priority=50
 
       - name: Build (no push)
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
@@ -262,6 +264,7 @@ jobs:
           push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: APP_VERSION=${{ steps.meta.outputs.version }}
           cache-from: type=gha,scope=image-${{ matrix.service }}
           cache-to: type=gha,scope=image-${{ matrix.service }},mode=max
 

@@ -1,6 +1,6 @@
 # Project Status -- What is Done and What is Not
 
-> **Last verified:** 2026-09-23 (CI/CD pipeline implemented — see [CI-PIPELINE.md](CI-PIPELINE.md); Gateway, Migration, and Client test suites added; ML happy-path test fixed; known issues refreshed.)
+> **Last verified:** 2026-10-21 (Migration image moved to `runtime:10.0`; known issue removed. Earlier: 2026-10-08 — Kubernetes deployment via `k8s/` on minikube — see [KUBERNETES.md](KUBERNETES.md); client image starts Vite directly. Earlier: 2026-09-23 — CI/CD pipeline implemented — see [CI-PIPELINE.md](CI-PIPELINE.md); Gateway, Migration, and Client test suites added; ML happy-path test fixed; known issues refreshed.)
 
 > **Maintenance obligation:** If you implement a feature that was listed as stub or TODO, move it to the "Implemented" section. If you introduce a new known issue or break something, add it to "Known Issues." Always update the "Last verified" date. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -120,6 +120,13 @@
 - New test suites added with the pipeline: `Gateway/tests/Relativa.Gateway.Tests` (JWT, prefix stripping, identity-header spoofing, CORS), `Migration/tests/Relativa.Migration.Tests` (EF model vs. migrations), Client Vitest specs (`src/**/__tests__`). ML `test_happy_path_scores` fixed (it predated the missing-input diagnosis). Integration suites now use the default Testcontainers Postgres readiness check instead of a port check (removed `57P03` flakiness).
 - Details, required checks, and local commands: [CI-PIPELINE.md](CI-PIPELINE.md).
 
+### Kubernetes (minikube)
+
+- `k8s/`: full stack in namespace `antoniuk`, one object per file, deployed with `kubectl apply -f k8s/` from scratch.
+- 7 app Deployments × 2 replicas on release images (`1.0.0`), requests/limits, readiness + liveness probes, zero-downtime `RollingUpdate`; Postgres on a PVC; migrations as a Job; init containers replace `depends_on`.
+- ConfigMap `relativa-config` + Secret `relativa-secrets` (dev values); Ingress with `relativa.local` / `api.relativa.local` / `mail.relativa.local`; cookie + ClientIP affinity for SignalR.
+- Verified: self-healing, scaling, rolling update 1.0.0 → 1.1.0 and rollback with 0 failed requests (k6), ImagePullBackOff diagnosis. Details: [KUBERNETES.md](KUBERNETES.md), [KUBERNETES-DEPLOY.md](../../KUBERNETES-DEPLOY.md).
+
 ### Docker Compose
 
 - Full 10-service stack with dependency ordering.
@@ -194,12 +201,11 @@
 | **Gateway README partially outdated** | Low | `Gateway/README.md` says JWT validation is a stub. Gateway now fully validates JWT. |
 | **Unused package reference** | Trivial | `Asp.Versioning.Http` is referenced in `Authentication/src/Relativa.Authentication/Relativa.Authentication.csproj` but never used in code. |
 | **Core CORS is `AllowAnyOrigin`** | Low | Gateway now has a proper named-origin CORS allowlist (reads `Cors:Origins` from config). Core retains `AllowAnyOrigin/Header/Method` as a dev convenience since Core is only reached via the gateway in deployed environments; tighten for production. |
-| **Client image runs the Vite dev server** | Medium | `Client/Dockerfile` starts `npm run dev` with dev dependencies instead of serving the `vite build` output (e.g. multi-stage build → nginx). Fine for local compose and CI E2E, not for production. Its esbuild 0.25 binary (Go 1.23 stdlib CVEs) is accepted in `.trivyignore` until 2027-03-31; fix together with a vite 7+ upgrade and the nginx image. |
+| **Client image runs the Vite dev server** | Medium | `Client/Dockerfile` starts the Vite dev server (`node_modules/.bin/vite`) with dev dependencies instead of serving the `vite build` output (e.g. multi-stage build → nginx). Fine for local compose and CI E2E, not for production. Its esbuild 0.25 binary (Go 1.23 stdlib CVEs) is accepted in `.trivyignore` until 2027-03-31; fix together with a vite 7+ upgrade and the nginx image. |
 | **ML model pickles pinned loosely** | Low | `closure_model.pkl` / `churn_model.pkl` were saved with scikit-learn 1.9.0, but `ML/pyproject.toml` allows `>=1.9,<1.10`; newer patch versions log `InconsistentVersionWarning` on load. |
 | **Moderate advisories in MailKit/MimeKit 4.11.0** | Low | Reported by NuGet audit for Core and Authentication; below the CI Trivy gate (HIGH/CRITICAL). Bump when convenient. |
 | **ML reads the host-mapped `DB_PORT` inside the container** | Medium | `docker-compose.yaml` passes `DB_PORT: ${DB_PORT}` (the *host* port of Postgres) to `ml`, and `ML/relativa_ml/settings.py` uses it to reach `postgres` on the internal network. Works only while `DB_PORT=5432`; changing it in `.env` to avoid a local port clash breaks ML's DB connection. Pass the container port (5432) instead. |
 | **Backend services publish host ports** | Medium | Compose publishes 8081–8086 (plus 5432, 5672/15672) on the host, while Core/Graph trust `X-User-Id` on the assumption that only the Gateway can reach them (see ARCHITECTURE "Trust boundary"). Anyone with access to the host can call Core directly with a forged header. Acceptable for local development only. |
-| **Migration image runs on the .NET SDK** | Low | `Migration/Dockerfile` uses `sdk:10.0` as the runtime stage (~1.3 GB). The console app only needs `mcr.microsoft.com/dotnet/runtime:10.0` plus `postgresql-client` for `entrypoint.sh --truncate`. |
 | **No code-coverage gate in the new CI** | Low | The previous workflow enforced ≥ 80 % line/branch coverage per assembly (ReportGenerator + `ci/coverage/*.runsettings`). The new pipeline uploads TRX test results only; `ci/coverage/` is currently unused. Re-add a coverage job or delete the folder. |
 | **`silent` request option is a no-op** | Trivial | `ApiRequestInit.silent` in `Client/src/api/http.ts` is documented to suppress the centralized error toast, but the HTTP layer never consumed it (the unused `parseResponse` parameter was removed for ESLint). Callers in `api/auth.ts` still pass it. Either wire it up or drop it. |
 | **Documentation drift (known, not yet fixed)** | Low | Found while building the CI; intentionally left for a separate docs pass: DOCKER-SETUP.md says `Jwt__Secret` / `auth-cluster` (compose uses `Jwt__SecretKey` / cluster `auth`), its topology diagram and env table omit RabbitMQ, MailHog, `RABBITMQ_*`, `SMTP_*`, `DB_HOST`, `MIGRATION_TRUNCATE_DB`; ARCHITECTURE.md claims only the Gateway publishes a host port (see row above); PROJECT-OVERVIEW.md and the "Migration README outdated" row above say `entrypoint.sh` is unused, but `Migration/Dockerfile` runs it (`--truncate` support); README.md links a missing `docs/USER-GUIDE.md`; DOCKER-BUILD.md mentions `DEFAULT_ROLE_ID`, which `.env.example` does not define; the Gateway section above still calls Graph/ML stubs. |
@@ -271,7 +277,8 @@
 
 - ~~CI/CD pipeline (GitHub Actions or similar).~~ *(done — see [CI-PIPELINE.md](CI-PIPELINE.md))*
 - ~~Test projects (at minimum: unit tests for Application services, integration tests for API endpoints).~~ *(done — every service has a test suite that runs in CI)*
-- Deployment stage (CD) consuming the GHCR images.
+- Deployment stage (CD) consuming the GHCR images. *(partial — `k8s/` deploys the release images to a local minikube cluster by hand; no automated deploy from CI.)*
+- SignalR backplane (e.g. Redis) so Core/Graph hubs broadcast across replicas in Kubernetes.
 - Client production image: multi-stage `vite build` → nginx, plus vite 7+ upgrade (removes the esbuild entries from `.trivyignore`, which expire 2027-03-31).
 - Extend Dependabot from GitHub Actions to NuGet, npm, and pip.
 - Production-ready CORS configuration.

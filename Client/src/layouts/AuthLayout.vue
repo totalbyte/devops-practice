@@ -5,6 +5,7 @@ import PreferencesBar from '@/components/layout/PreferencesBar.vue';
 
 const { t } = useI18n();
 const year = new Date().getFullYear();
+const appVersion = import.meta.env.VITE_APP_VERSION;
 </script>
 
 <template>
@@ -36,6 +37,10 @@ const year = new Date().getFullYear();
       <span>{{ t('footer.copyright', { year }) }}</span>
       <span aria-hidden="true">·</span>
       <span>{{ t('footer.rights') }}</span>
+      <template v-if="appVersion">
+        <span aria-hidden="true">·</span>
+        <span data-testid="app-version">v{{ appVersion }}</span>
+      </template>
     </footer>
   </div>
 </template>

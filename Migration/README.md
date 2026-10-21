@@ -6,7 +6,7 @@
 
 - `Relativa.Migration.sln` — корінь.
 - `src/Relativa.Migration/` — консоль-заглушка + пакет Design.
-- `Dockerfile` — `mcr.microsoft.com/dotnet/sdk:10.0`, збірка проєкту, `ENTRYPOINT` викликає `entrypoint.sh`.
+- `Dockerfile` — збірка на `mcr.microsoft.com/dotnet/sdk:10.0`, запуск на `mcr.microsoft.com/dotnet/runtime:10.0` (+ `postgresql-client`), `ENTRYPOINT` викликає `entrypoint.sh`.
 - `entrypoint.sh` — скелет: виводить підказку щодо env, **`exit 0`**. Замінити на `dotnet ef database update` або **EF migrations bundle** з артефактів CI Core.
 
 ## Оточення

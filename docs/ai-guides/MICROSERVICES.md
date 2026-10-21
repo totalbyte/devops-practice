@@ -1,6 +1,6 @@
 # Microservices -- Service Catalog
 
-> **Last verified:** 2026-05-29 (Added `PUT /entity-relationships/{id}` endpoint for generic relationship reassignment; also documented existing `POST`/`DELETE` entity-relationship endpoints that were missing from this guide.)
+> **Last verified:** 2026-10-07 (Gateway: anonymous `GET /version` — release version + instance/pod name.)
 
 > **Maintenance obligation:** If you add, remove, or change any endpoint or service, update this file and its "Last verified" date before finishing your task. If you add or remove an entire service, also update [DOCKER-SETUP.md](DOCKER-SETUP.md) and [PROJECT-OVERVIEW.md](PROJECT-OVERVIEW.md). See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -16,7 +16,7 @@
 | Graph | 8083 | .NET 10, SignalR, RabbitMQ | Functional — `GET /api/v1/graph` (RBAC-filtered user-centric graph), `POST .../entity-graph/create` (RPC to Core), SignalR hub, workspace choreography consumer |
 | Audit | 8086 | .NET 10, EF Core, RabbitMQ | Functional |
 | Migration | -- | .NET 10, EF Core (console) | Functional |
-| ML | 8084 | Django 5.1, DRF, pika | Functional batch scoring (RabbitMQ RPC from Graph) + choreography subscriber |
+| ML | 8084 | Django 5.2, DRF, pika | Functional batch scoring (RabbitMQ RPC from Graph) + choreography subscriber |
 | Client | 3000 | Vue 3, Vite | Scaffold |
 
 ---
@@ -33,10 +33,11 @@
 
 | Method | Path | Auth | Behavior |
 |---|---|---|---|
-| GET | `/health` | None | Returns `{"status":"Healthy","service":"relativa-gateway"}` |
-| GET | `/scalar/v1` | None | Scalar interactive API docs (uses merged `GET /openapi/aggregated.json`, including ML `POST /ml/api/ml/recalculate/` and `POST /ml/api/ml/score/batch`) |
+| GET | `/health` | None | Returns `{"status":"ok","service":"relativa-gateway"}` |
+| GET | `/version` | None | Returns `{"service":"relativa-gateway","version":"<APP_VERSION>","instance":"<hostname>"}`. `version` is baked in at image build (`dev` locally); `instance` is the container hostname = pod name in Kubernetes, used to show load balancing across replicas and rolling updates. |
+| GET | `/scalar/v1` | None | Scalar interactive API docs (uses merged `GET /openapi/aggregated.json`, including ML `POST /ml/api/ml/recalculate/` and `POST /ml/api/ml/score/batch`, plus the Gateway's own anonymous `GET /health` and `GET /version` under the *Gateway* tag) |
 | GET | `/openapi/v1.json` | None | Raw OpenAPI spec |
-| GET | `/openapi/aggregated.json` | None | Merged Auth + Core + Audit + manual ML paths for Scalar |
+| GET | `/openapi/aggregated.json` | None | Merged Auth + Core + Audit + manual ML + Gateway (`/health`, `/version`) paths for Scalar |
 | * | `/auth/{**rest}` | Bearer JWT (anonymous exceptions below) | Proxied to Authentication (8081), prefix `/auth` stripped |
 | * | `/core/{**rest}` | Bearer JWT (anonymous exceptions below) | Proxied to Core (8082), prefix `/core` stripped |
 | * | `/graph/{**rest}` | Bearer JWT | Proxied to Graph (8083), prefix `/graph` stripped |
@@ -374,7 +375,7 @@ None -- this is a console application, not a web service.
 
 **Purpose:** Machine learning service for scoring deals (closure probability, churn risk). Built on Django + DRF with on-demand batch scoring and RabbitMQ-driven freshness updates.
 
-**Stack:** Python 3.12, Django 5.1, Django REST Framework, scikit-learn (`.pkl` models loaded at startup), Celery + Redis (configured but inactive), pika (RabbitMQ choreography consumer)
+**Stack:** Python 3.12, Django 5.2, Django REST Framework, scikit-learn (`.pkl` models loaded at startup), Celery + Redis (configured but inactive), pika (RabbitMQ choreography consumer)
 **Project:** `ML/`
 **Port:** 8084
 
