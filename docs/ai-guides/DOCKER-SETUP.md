@@ -1,6 +1,6 @@
 # Docker Setup -- Infrastructure and Deployment
 
-> **Last verified:** 2026-10-08 (Gateway and Client Dockerfiles take `ARG APP_VERSION` (→ `ENV APP_VERSION` / `ENV VITE_APP_VERSION`); release image tags `<major>.<minor>.<patch>` usable as `IMAGE_TAG`.)
+> **Last verified:** 2026-10-21 (Migration runtime stage is `runtime:10.0` instead of the SDK. Earlier: 2026-10-08 — Gateway and Client Dockerfiles take `ARG APP_VERSION` (→ `ENV APP_VERSION` / `ENV VITE_APP_VERSION`); release image tags `<major>.<minor>.<patch>` usable as `IMAGE_TAG`.)
 
 > **Maintenance obligation:** If you change Docker Compose, Dockerfiles, networking, volumes, or environment variables, update this file and its "Last verified" date before finishing your task. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -117,7 +117,7 @@ Pattern: **multi-stage build**
 
 **Build arg:** `Gateway/Dockerfile` declares `ARG APP_VERSION=dev` and exports it as `ENV APP_VERSION` (reported by `GET /version`); `Client/Dockerfile` exports it as `ENV VITE_APP_VERSION`, shown as `v<version>` in the auth-page footer (hidden when unset, e.g. plain `npm run dev` on the host). CI passes the release version; local `docker compose build` leaves it at `dev`.
 
-**Exception:** Migration uses `sdk:10.0` as the runtime image (not `aspnet`) because it is a console host, not a web server.
+**Exception:** Migration uses `runtime:10.0` as the runtime image (not `aspnet`) because it is a console host, not a web server; it adds `postgresql-client` for `entrypoint.sh --truncate`. It used to run on the full `sdk:10.0` image, whose bundled PowerShell was flagged by Trivy.
 
 ### Build context details
 

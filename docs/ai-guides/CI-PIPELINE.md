@@ -1,6 +1,6 @@
 # CI Pipeline -- GitHub Actions, Images, Registry
 
-> **Last verified:** 2026-10-08 (Release tags: `v*` git tags publish `<major>.<minor>.<patch>` image tags; `APP_VERSION` build arg consumed by Gateway and Client; new Trivy findings fixed: Django 5.2, npm removed from the client image.)
+> **Last verified:** 2026-10-21 (New Trivy findings: Migration on `runtime:10.0`, vite 6.4.5, four more esbuild Go stdlib CVEs accepted. Earlier: 2026-10-08 — release tags, `APP_VERSION`, Django 5.2, npm removed from the client image.)
 
 > **Maintenance obligation:** If you change `.github/workflows/`, `.github/actions/`, lint configuration (`.editorconfig`, `ML/pyproject.toml` Ruff section, `Client/eslint.config.js`), `.trivyignore`, `.dockerignore` files, or `docker-compose.images.yaml`, update this file and its "Last verified" date before finishing your task. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -108,7 +108,7 @@ Steps: `docker/metadata-action` (tags + OCI labels) → `docker/build-push-actio
 
 **Accepting a finding:** add the CVE id to `.trivyignore` with a comment explaining why, plus `exp:YYYY-MM-DD` so the scan blocks again after that date. Prefer bumping the package or base image instead. Currently accepted: the Go stdlib CVEs inside the client's esbuild 0.25 binary (dev/build-time tool, expires 2027-03-31).
 
-Fixes already applied so every image passes the gate: `Microsoft.AspNetCore.OpenApi` 10.0.12 (pulls a patched `Microsoft.OpenApi`), `pip` removed from the ML runtime image, Django 5.2 LTS (≥ 5.2.17, CVE-2026-15307), npm removed from the client runtime image after `npm ci` (its bundled brace-expansion/undici were flagged), client dependencies refreshed with `npm update`.
+Fixes already applied so every image passes the gate: `Microsoft.AspNetCore.OpenApi` 10.0.12 (pulls a patched `Microsoft.OpenApi`), `pip` removed from the ML runtime image, Django 5.2 LTS (≥ 5.2.17, CVE-2026-15307), npm removed from the client runtime image after `npm ci` (its bundled brace-expansion/undici were flagged), client dependencies refreshed with `npm update` (vite 6.4.5), Migration runtime stage on `runtime:10.0` instead of `sdk:10.0` (the SDK's bundled PowerShell carried vulnerable `System.Security.Cryptography.*`).
 
 **Build context hygiene:** every build context has a tracked `.dockerignore` (repo root, `Gateway/`, `Client/`, `ML/`) so host `bin/`, `obj/`, `node_modules/`, `.venv/`, and `.env` never reach an image.
 
