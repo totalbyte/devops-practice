@@ -46,6 +46,76 @@ minikube tunnel
 kubectl get pods -n antoniuk -l app.kubernetes.io/name=gateway -o wide -w
 ```
 
+## 1. Образ застосунку
+
+Образи збирає CI з лаби 2 і публікує в GHCR (`ghcr.io/totalbyte/relativa-<service>`). Версійний тег з'являється, коли пушиться git-тег `v*`: `v1.0.0` → образ `1.0.0`.
+
+Що показати:
+
+- GitHub → репозиторій → **Packages**: 8 пакетів `relativa-*`, у кожного теги `1.0.0` і `1.1.0` (публічні).
+- GitHub → **Actions**: зелені прогони для тегів `v1.0.0` і `v1.1.0`.
+- Git-теги та коміти, на які вони вказують:
+
+```powershell
+git tag
+git log --oneline --decorate -5
+```
+
+- Що версії відрізняються (запускає обидві версії gateway у Docker, без кластера):
+
+```powershell
+docker run -d --rm --name gw100 -p 18080:8080 ghcr.io/totalbyte/relativa-gateway:1.0.0
+docker run -d --rm --name gw110 -p 18081:8080 ghcr.io/totalbyte/relativa-gateway:1.1.0
+curl.exe -s http://localhost:18080/version
+curl.exe -s http://localhost:18081/version
+docker rm -f gw100 gw110
+```
+
+- У маніфестах тег конкретний, не `latest`:
+
+```powershell
+Select-String -Path k8s\*.yaml -Pattern 'image:'
+```
+
+Відмінності версій: `GET /version` повертає номер версії (і ім'я пода); у 1.1.0 клієнт показує `v1.1.0` внизу сторінки логіну.
+
+## 3. Namespace
+
+Namespace названо прізвищем — `antoniuk`; усі об'єкти створюються тільки в ньому (у кожному маніфесті `namespace: antoniuk`).
+
+```powershell
+Get-Content k8s\00-namespace.yaml
+kubectl get namespaces
+kubectl get all -n antoniuk
+```
+
+## 4. Маніфести
+
+Каталог `k8s/` у репозиторії, один об'єкт на файл (29 файлів). Нумерація задає порядок застосування.
+
+```powershell
+Get-ChildItem k8s
+```
+
+Що показати по вимогах (відкрити файли в редакторі або `Get-Content`):
+
+| Вимога | Файл | На що звернути увагу |
+|---|---|---|
+| b) Deployment ≥ 2 реплік, labels/selector, requests/limits, проби | `k8s\40-gateway-deployment.yaml` | `replicas: 2`, `selector.matchLabels` = `template.metadata.labels`, `resources`, `readinessProbe` / `livenessProbe`, `strategy: RollingUpdate` |
+| c) Service | `k8s\41-gateway-service.yaml` | `type: ClusterIP`, `selector` за тією ж міткою |
+| d) ConfigMap ≥ 2 параметри як env | `k8s\01-configmap.yaml` + `envFrom` у будь-якому Deployment | 19 параметрів |
+| e) Secret | `k8s\02-secret.yaml` + `secretKeyRef` у Deployment | лише dev-значення |
+| f) Ingress | `k8s\50-ingress.yaml` | 3 хости, cookie affinity |
+| g) PVC для компонента зі станом | `k8s\10-postgres-pvc.yaml` + `volumes` у `k8s\11-postgres-deployment.yaml` | 2Gi, ReadWriteOnce |
+
+Чому інфраструктура (Postgres, RabbitMQ, MailHog) має 1 репліку: дві копії БД на одному томі пошкодять дані, два RabbitMQ — це два різні брокери, MailHog тримає пошту в пам'яті. Порядок старту замість `depends_on` — Job `migration` + init-контейнери (`k8s\30-auth-deployment.yaml`, блок `initContainers`).
+
+Перевірка схеми без створення об'єктів:
+
+```powershell
+kubectl apply -f k8s/ --dry-run=client --validate=strict
+```
+
 ## 5. Розгортання
 
 Розгортання з нуля (якщо namespace вже є і треба почати чисто — `kubectl delete namespace antoniuk`, дочекатися видалення):

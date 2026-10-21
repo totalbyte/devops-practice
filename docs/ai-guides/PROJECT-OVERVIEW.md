@@ -144,7 +144,7 @@ Relativa/
 |---|---|---|
 | `DOCKER-BUILD.md` | Operational Docker guide | Current and accurate. |
 | `KUBERNETES-DEPLOY.md` | Operational Kubernetes (minikube) guide | Current and accurate. |
-| `docs/runbooks/KUBERNETES-DEMO.md` | Lab 3 demo commands (Ukrainian), step by step | Current. |
+| `docs/runbooks/KUBERNETES-LAB3.md` | Lab 3 demo commands (Ukrainian), step by step | Current. |
 | `docs/runbooks/RABBITMQ-CHOREOGRAPHY.md` | Rabbit choreography + DLQ operations | Describes exchanges, purge commands, idempotency table |
 | `SCALAR-GUIDE.md` | Scalar API docs walkthrough | Current and accurate. |
 | `CONTRIBUTORS.md` | Contributor list | -- |

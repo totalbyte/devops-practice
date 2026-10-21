@@ -154,6 +154,24 @@ kubectl apply -f k8s/20-migration-job.yaml
 | `relativa.local` does not open | `minikube tunnel` running? hosts entry present? `kubectl get ingress -n antoniuk` | Tunnel closed or hosts file missing the names |
 | Browser shows CORS errors | `kubectl exec deploy/gateway -n antoniuk -- printenv Cors__Origins__0` | `CORS_ORIGIN` in the ConfigMap must equal the SPA origin |
 | `kubectl` warns about version skew | `kubectl version` | Docker Desktop's old kubectl is first in `PATH` (see Prerequisites) |
+| `minikube start` hangs on `Loading gcr.io/k8s-minikube/kicbase:... from local cache` | `docker image ls --digests` → which image ID `kicbase:v0.0.51` points to | Docker's containerd image store: the base image was reloaded from minikube's cache tarball under a different digest, so minikube no longer finds the pinned digest in the daemon and retries the (hanging) tarball load — see below |
+
+### `minikube start` hangs while loading the base image
+
+Docker Desktop with the containerd image store (`docker info` → `driver-type: io.containerd.snapshotter.v1`) gives an image loaded from a tarball a different digest than the same image pulled from the registry. minikube pins the base image by digest (`kicbase:v0.0.51@sha256:4a1c…`); once the `v0.0.51` tag points at a tarball-loaded copy, every `minikube start` misses the image in the daemon, falls back to loading `~\.minikube\cache\kic\...tar`, and hangs there.
+
+Stop the hung start with Ctrl+C, then pull the pinned digest from the registry, point the tag back at it, and drop the cache tarball:
+
+```powershell
+docker pull gcr.io/k8s-minikube/kicbase:v0.0.51@sha256:4a1c825b61479e6c898851ea66f13c620aaeab6002746e95067fc2c4b38a0b24
+docker tag gcr.io/k8s-minikube/kicbase:v0.0.51@sha256:4a1c825b61479e6c898851ea66f13c620aaeab6002746e95067fc2c4b38a0b24 gcr.io/k8s-minikube/kicbase:v0.0.51
+Remove-Item "$env:USERPROFILE\.minikube\cache\kic\amd64\kicbase_v0.0.51*"
+minikube start
+```
+
+The cluster's data is not affected (it lives in the `minikube` container and its volume). If `docker image ls --digests` still shows a second `kicbase` copy with another ID, remove it with `docker rmi <id>`. To avoid this: keep the registry-pulled `kicbase` image (no `docker image prune -a`), and run `minikube stop` before quitting Docker Desktop. The digest above is for minikube v1.39.0; other versions print theirs in the `Loading ...` line.
+
+### Useful commands
 
 ```powershell
 kubectl get events -n antoniuk --sort-by=.lastTimestamp

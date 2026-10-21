@@ -384,7 +384,7 @@ Each application service runs **2 replicas** with resource requests/limits, read
 
 The committed values are **development-only placeholders**, not real credentials. Containers receive ConfigMap keys via `envFrom` and secrets via `secretKeyRef`; .NET settings such as `ConnectionStrings__Default` are composed from them with `$(VAR)` references.
 
-📖 Full walkthrough: [KUBERNETES-DEPLOY.md](KUBERNETES-DEPLOY.md) · Architecture: [docs/ai-guides/KUBERNETES.md](docs/ai-guides/KUBERNETES.md) · Lab 3 demo commands: [docs/runbooks/KUBERNETES-DEMO.md](docs/runbooks/KUBERNETES-DEMO.md)
+📖 Full walkthrough: [KUBERNETES-DEPLOY.md](KUBERNETES-DEPLOY.md) · Architecture: [docs/ai-guides/KUBERNETES.md](docs/ai-guides/KUBERNETES.md) · Lab 3 demo commands: [docs/runbooks/KUBERNETES-LAB3.md](docs/runbooks/KUBERNETES-LAB3.md)
 
 ---
 
