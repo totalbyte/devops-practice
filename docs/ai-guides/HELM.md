@@ -1,6 +1,6 @@
 # Helm -- Chart Internals and Conventions
 
-> **Last verified:** 2026-10-22 (Initial chart `helm/relativa` 0.1.0, appVersion 1.1.0: `k8s/` as templates, dev/prod values, pre-upgrade backup hook, release tests; Helm 3.20.)
+> **Last verified:** 2026-10-28 (Chart 0.2.0: `progressDeadlineSeconds` + per-service override; the chart is deployed by Argo CD from the `relativa-gitops` copy, see [GITOPS.md](GITOPS.md).) Earlier: 2026-10-22 (Initial chart `helm/relativa` 0.1.0, appVersion 1.1.0: `k8s/` as templates, dev/prod values, pre-upgrade backup hook, release tests; Helm 3.20.)
 
 > **Maintenance obligation:** If you change anything under `helm/relativa/` -- templates, helpers, values keys or defaults, `Chart.yaml` -- update this file and its "Last verified" date, the parameter table in [helm/relativa/README.md](../../helm/relativa/README.md), and bump `version` in `Chart.yaml` (SemVer: template fix = patch, new value = minor, renamed/removed value = major). A change to a service's env vars, ports, probes or images usually has to be made **both** in `k8s/` and in the matching chart template. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -82,9 +82,15 @@ Multi-argument helpers take a `list` (`index . 0` is the root context) rather th
 
 **`ASPNETCORE_ENVIRONMENT` stays `Development`.** It is a value, but `Production` makes Graph skip `MapOpenApi()`, and the gateway's aggregated Scalar document would lose the Graph group. Both environment files leave it at the default.
 
+**Progress deadline is a value.** `progressDeadlineSeconds` and `<service>.progressDeadlineSeconds` (both unset by default: the field is not rendered and Kubernetes uses 600 s, so the default render is unchanged) set how long a rollout may stall before the Deployment reports `ProgressDeadlineExceeded`. Argo CD maps that condition to health `Degraded`; before it the app is only `Progressing`. The GitOps values shorten it for the gateway only (60 s): a global short deadline marks the first install `Degraded` while backends wait for the migration and pull images.
+
 **Container ports stay literal.** Client (Vite `--port 3000`) and ML (gunicorn script) fix their ports in the image; the .NET ports are set with `ASPNETCORE_URLS` and kept literal for symmetry. Service ports are values; YARP destinations and tests use the Service port values.
 
 ---
+
+## Under Argo CD
+
+Argo CD renders the chart with `helm template` and applies the result itself (no Helm release, `helm list` is empty). What that changes, and how the `relativa-gitops` values handle it, is in [GITOPS.md](GITOPS.md): `lookup` returns nothing (so `secrets.existingSecret` is required), `pre-upgrade` becomes a `PreSync` hook that also runs on the first sync (so `backup.enabled: false`), and test hooks are skipped with `helm.skipTests`.
 
 ## Hook and tests
 
