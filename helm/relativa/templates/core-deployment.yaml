@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "relativa.componentName" (list . "core") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relativa.componentLabels" (list . "core") | nindent 4 }}
+spec:
+  replicas: {{ .Values.core.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      {{- include "relativa.componentSelectorLabels" (list . "core") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "relativa.podLabels" (list . "core") | nindent 8 }}
+      annotations:
+        {{- include "relativa.checksums" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "relativa.migrationWaiterName" . }}
+      initContainers:
+        {{- include "relativa.waitForMigration" . | nindent 8 }}
+        {{- include "relativa.waitForRabbitmq" . | nindent 8 }}
+      containers:
+        - name: core
+          image: {{ include "relativa.appImage" (list . .Values.core.image) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: {{ include "relativa.configMapName" . }}
+          env:
+            {{- include "relativa.secretEnv" (list . "DB_PASS" "DB_PASS") | nindent 12 }}
+            {{- include "relativa.secretEnv" (list . "RABBITMQ_PASS" "RABBITMQ_PASS") | nindent 12 }}
+            - name: ASPNETCORE_URLS
+              value: http://+:8082
+            - name: ConnectionStrings__Default
+              value: Host=$(DB_HOST);Port=$(DB_PORT);Database=$(DB_NAME);Username=$(DB_USER);Password=$(DB_PASS)
+            - name: RabbitMqAudit__Host
+              value: $(RABBITMQ_HOST)
+            - name: RabbitMqAudit__Port
+              value: $(RABBITMQ_PORT)
+            - name: RabbitMqAudit__Username
+              value: $(RABBITMQ_USER)
+            - name: RabbitMqAudit__Password
+              value: $(RABBITMQ_PASS)
+            - name: RabbitMqAudit__Exchange
+              value: audit.events
+            - name: RabbitMqAudit__DomainExchange
+              value: relativa.domain
+            - name: RabbitMqGraph__Host
+              value: $(RABBITMQ_HOST)
+            - name: RabbitMqGraph__Port
+              value: $(RABBITMQ_PORT)
+            - name: RabbitMqGraph__Username
+              value: $(RABBITMQ_USER)
+            - name: RabbitMqGraph__Password
+              value: $(RABBITMQ_PASS)
+          resources:
+            {{- toYaml .Values.core.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "relativa.componentName" (list . "auth") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relativa.componentLabels" (list . "auth") | nindent 4 }}
+spec:
+  type: {{ .Values.auth.service.type }}
+  selector:
+    {{- include "relativa.componentSelectorLabels" (list . "auth") | nindent 4 }}
+  {{- with .Values.auth.service.sessionAffinity }}
+  sessionAffinity: {{ . }}
+  {{- end }}
+  ports:
+    - name: http
+      port: {{ .Values.auth.service.port }}
+      targetPort: http

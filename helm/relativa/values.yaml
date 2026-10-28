@@ -1,0 +1,284 @@
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  registry: ghcr.io/totalbyte
+  tag: ""
+  pullPolicy: IfNotPresent
+
+config:
+  aspnetcoreEnvironment: Development
+  database:
+    name: relativa
+    user: relativa
+  rabbitmq:
+    user: relativa
+  jwt:
+    issuer: relativa-auth
+    audience: relativa
+  smtp:
+    fromAddress: noreply@relativa.com
+    fromName: Relativa
+    useSsl: false
+  urls:
+    frontend: http://localhost:3000
+    gateway: http://localhost:8080
+
+secrets:
+  existingSecret: ""
+  dbPassword: ""
+  rabbitmqPassword: ""
+  jwtSecret: ""
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/session-cookie-name: relativa-affinity
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "3600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+  hosts:
+    client: relativa.local
+    gateway: api.relativa.local
+    mailhog: mail.relativa.local
+
+initImages:
+  kubectl:
+    repository: registry.k8s.io/kubectl
+    tag: v1.37.1
+  busybox:
+    repository: busybox
+    tag: "1.37"
+
+initResources:
+  kubectl:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+  busybox:
+    requests:
+      cpu: 10m
+      memory: 8Mi
+    limits:
+      cpu: 50m
+      memory: 16Mi
+  postgres:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+
+gateway:
+  replicaCount: 1
+  image:
+    repository: relativa-gateway
+    tag: ""
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      cpu: 25m
+      memory: 96Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+auth:
+  replicaCount: 1
+  image:
+    repository: relativa-auth
+    tag: ""
+  service:
+    type: ClusterIP
+    port: 8081
+  resources:
+    requests:
+      cpu: 25m
+      memory: 96Mi
+    limits:
+      cpu: 500m
+      memory: 320Mi
+
+core:
+  replicaCount: 1
+  image:
+    repository: relativa-core
+    tag: ""
+  service:
+    type: ClusterIP
+    port: 8082
+    sessionAffinity: ClientIP
+  resources:
+    requests:
+      cpu: 25m
+      memory: 96Mi
+    limits:
+      cpu: 500m
+      memory: 320Mi
+
+graph:
+  replicaCount: 1
+  image:
+    repository: relativa-graph
+    tag: ""
+  service:
+    type: ClusterIP
+    port: 8083
+    sessionAffinity: ClientIP
+  resources:
+    requests:
+      cpu: 25m
+      memory: 96Mi
+    limits:
+      cpu: 500m
+      memory: 320Mi
+
+audit:
+  replicaCount: 1
+  image:
+    repository: relativa-audit
+    tag: ""
+  service:
+    type: ClusterIP
+    port: 8086
+  resources:
+    requests:
+      cpu: 25m
+      memory: 96Mi
+    limits:
+      cpu: 500m
+      memory: 320Mi
+
+ml:
+  replicaCount: 1
+  image:
+    repository: relativa-ml
+    tag: ""
+  service:
+    type: ClusterIP
+    port: 8084
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 768Mi
+
+client:
+  replicaCount: 1
+  image:
+    repository: relativa-client
+    tag: ""
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    requests:
+      cpu: 50m
+      memory: 192Mi
+    limits:
+      cpu: "1"
+      memory: 768Mi
+
+migration:
+  image:
+    repository: relativa-migration
+    tag: ""
+  backoffLimit: 6
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 768Mi
+
+postgres:
+  replicaCount: 1
+  image:
+    repository: postgres
+    tag: 16-alpine
+  service:
+    type: ClusterIP
+    port: 5432
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  persistence:
+    enabled: true
+    size: 2Gi
+    accessMode: ReadWriteOnce
+    storageClass: ""
+
+backup:
+  enabled: true
+  keep: 5
+  persistence:
+    size: 1Gi
+    accessMode: ReadWriteOnce
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+tests:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 8Mi
+    limits:
+      cpu: 50m
+      memory: 16Mi
+
+rabbitmq:
+  replicaCount: 1
+  image:
+    repository: rabbitmq
+    tag: 3.13-management-alpine
+  service:
+    type: ClusterIP
+    ports:
+      amqp: 5672
+      management: 15672
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+mailhog:
+  replicaCount: 1
+  image:
+    repository: mailhog/mailhog
+    tag: v1.0.1
+  service:
+    type: ClusterIP
+    ports:
+      smtp: 1025
+      http: 8025
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi

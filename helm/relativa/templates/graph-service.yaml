@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "relativa.componentName" (list . "graph") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relativa.componentLabels" (list . "graph") | nindent 4 }}
+spec:
+  type: {{ .Values.graph.service.type }}
+  selector:
+    {{- include "relativa.componentSelectorLabels" (list . "graph") | nindent 4 }}
+  {{- with .Values.graph.service.sessionAffinity }}
+  sessionAffinity: {{ . }}
+  {{- end }}
+  ports:
+    - name: http
+      port: {{ .Values.graph.service.port }}
+      targetPort: http

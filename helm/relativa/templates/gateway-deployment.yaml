@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "relativa.componentName" (list . "gateway") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relativa.componentLabels" (list . "gateway") | nindent 4 }}
+spec:
+  replicas: {{ .Values.gateway.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      {{- include "relativa.componentSelectorLabels" (list . "gateway") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "relativa.podLabels" (list . "gateway") | nindent 8 }}
+      annotations:
+        {{- include "relativa.checksums" . | nindent 8 }}
+    spec:
+      containers:
+        - name: gateway
+          image: {{ include "relativa.appImage" (list . .Values.gateway.image) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: {{ include "relativa.configMapName" . }}
+          env:
+            {{- include "relativa.secretEnv" (list . "JWT_SECRET" "JWT_SECRET") | nindent 12 }}
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+            - name: Jwt__SecretKey
+              value: $(JWT_SECRET)
+            - name: Jwt__Issuer
+              value: $(JWT_ISSUER)
+            - name: Jwt__Audience
+              value: $(JWT_AUDIENCE)
+            - name: Cors__Origins__0
+              value: $(CORS_ORIGIN)
+            - name: Cors__AllowAnyOriginForDev
+              value: "false"
+            - name: Gateway__PublicBaseUrl
+              value: $(GATEWAY_PUBLIC_URL)
+            {{- range $component := list "auth" "core" "graph" "ml" "audit" }}
+            - name: ReverseProxy__Clusters__{{ $component }}__Destinations__d1__Address
+              value: http://{{ include "relativa.componentName" (list $ $component) }}:{{ (index $.Values $component).service.port }}/
+            {{- end }}
+          resources:
+            {{- toYaml .Values.gateway.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 3
+            timeoutSeconds: 3
+            failureThreshold: 2
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3

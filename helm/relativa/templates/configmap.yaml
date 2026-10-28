@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "relativa.configMapName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relativa.labels" . | nindent 4 }}
+data:
+  ASPNETCORE_ENVIRONMENT: {{ .Values.config.aspnetcoreEnvironment | quote }}
+  DB_HOST: {{ include "relativa.componentName" (list . "postgres") }}
+  DB_PORT: {{ .Values.postgres.service.port | quote }}
+  DB_NAME: {{ .Values.config.database.name | quote }}
+  DB_USER: {{ .Values.config.database.user | quote }}
+  RABBITMQ_HOST: {{ include "relativa.componentName" (list . "rabbitmq") }}
+  RABBITMQ_PORT: {{ .Values.rabbitmq.service.ports.amqp | quote }}
+  RABBITMQ_USER: {{ .Values.config.rabbitmq.user | quote }}
+  JWT_ISSUER: {{ .Values.config.jwt.issuer | quote }}
+  JWT_AUDIENCE: {{ .Values.config.jwt.audience | quote }}
+  SMTP_HOST: {{ include "relativa.componentName" (list . "mailhog") }}
+  SMTP_PORT: {{ .Values.mailhog.service.ports.smtp | quote }}
+  SMTP_FROM_ADDRESS: {{ .Values.config.smtp.fromAddress | quote }}
+  SMTP_FROM_NAME: {{ .Values.config.smtp.fromName | quote }}
+  SMTP_USE_SSL: {{ .Values.config.smtp.useSsl | quote }}
+  APP_FRONTEND_BASE_URL: {{ include "relativa.frontendUrl" . | quote }}
+  CORS_ORIGIN: {{ include "relativa.frontendUrl" . | quote }}
+  GATEWAY_PUBLIC_URL: {{ include "relativa.gatewayUrl" . | quote }}
+  VITE_GATEWAY_URL: {{ include "relativa.gatewayUrl" . | quote }}

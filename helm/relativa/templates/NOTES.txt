@@ -1,0 +1,58 @@
+{{- $ns := .Release.Namespace -}}
+Relativa is installed as release "{{ .Release.Name }}" in namespace "{{ $ns }}".
+Chart {{ include "relativa.chart" . }}, revision {{ .Release.Revision }}, gateway image {{ include "relativa.imageTag" (list . .Values.gateway.image) }} (default tag for all Relativa images: {{ .Values.image.tag | default .Chart.AppVersion }}).
+
+1. Wait until every pod is Running and the migration Job is Completed (3-4 minutes on a fresh cluster):
+
+     kubectl get pods -n {{ $ns }} -l app.kubernetes.io/instance={{ .Release.Name }} -w
+
+2. Open the application.
+{{- if .Values.ingress.enabled }}
+
+   Map the Ingress hosts to 127.0.0.1 in C:\Windows\System32\drivers\etc\hosts (or /etc/hosts):
+
+     127.0.0.1 {{ .Values.ingress.hosts.client }} {{ .Values.ingress.hosts.gateway }} {{ .Values.ingress.hosts.mailhog }}
+
+   Keep "minikube tunnel" running in a separate terminal, then open:
+
+     App:      http://{{ .Values.ingress.hosts.client }}
+     API docs: http://{{ .Values.ingress.hosts.gateway }}/scalar/v1
+     MailHog:  http://{{ .Values.ingress.hosts.mailhog }}
+{{- else }}
+{{- $clientPort := regexFind "[0-9]+$" .Values.config.urls.frontend | default "3000" }}
+{{- $gatewayPort := regexFind "[0-9]+$" .Values.config.urls.gateway | default "8080" }}
+
+   Ingress is disabled. Forward the ports, each in its own terminal:
+
+     kubectl port-forward -n {{ $ns }} svc/{{ include "relativa.componentName" (list . "client") }} {{ $clientPort }}:{{ .Values.client.service.port }}
+     kubectl port-forward -n {{ $ns }} svc/{{ include "relativa.componentName" (list . "gateway") }} {{ $gatewayPort }}:{{ .Values.gateway.service.port }}
+     kubectl port-forward -n {{ $ns }} svc/{{ include "relativa.componentName" (list . "mailhog") }} 8025:{{ .Values.mailhog.service.ports.http }}
+
+   Then open:
+
+     App:      {{ .Values.config.urls.frontend }}
+     API docs: {{ .Values.config.urls.gateway }}/scalar/v1
+     MailHog:  http://localhost:8025
+{{- end }}
+
+3. Passwords live in the Secret "{{ include "relativa.secretName" . }}" (keys DB_PASS, RABBITMQ_PASS, JWT_SECRET).
+{{- if not .Values.secrets.existingSecret }}
+   Values left empty are generated on install and kept on upgrade.
+{{- end }}
+   Read one in PowerShell:
+
+     kubectl get secret {{ include "relativa.secretName" . }} -n {{ $ns }} -o jsonpath='{.data.DB_PASS}' | % { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
+
+   or in bash:
+
+     kubectl get secret {{ include "relativa.secretName" . }} -n {{ $ns }} -o jsonpath='{.data.DB_PASS}' | base64 -d
+
+4. Check the release once the pods are ready:
+
+     helm test {{ .Release.Name }} -n {{ $ns }}
+{{- if .Values.backup.enabled }}
+
+   Every "helm upgrade" first dumps the database to the PVC "{{ include "relativa.componentName" (list . "backups") }}" (last {{ .Values.backup.keep }} kept):
+
+     kubectl exec -n {{ $ns }} deploy/{{ include "relativa.componentName" (list . "postgres") }} -- ls -l /backups
+{{- end }}
