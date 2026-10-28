@@ -7,6 +7,9 @@ metadata:
     {{- include "relativa.componentLabels" (list . "core") | nindent 4 }}
 spec:
   replicas: {{ .Values.core.replicaCount }}
+  {{- with .Values.core.progressDeadlineSeconds | default .Values.progressDeadlineSeconds }}
+  progressDeadlineSeconds: {{ . }}
+  {{- end }}
   strategy:
     type: RollingUpdate
     rollingUpdate:

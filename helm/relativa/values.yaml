@@ -44,6 +44,8 @@ ingress:
     gateway: api.relativa.local
     mailhog: mail.relativa.local
 
+progressDeadlineSeconds: null
+
 initImages:
   kubectl:
     repository: registry.k8s.io/kubectl
