@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "relativa.componentName" (list . "mailhog") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relativa.componentLabels" (list . "mailhog") | nindent 4 }}
+spec:
+  replicas: {{ .Values.mailhog.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "relativa.componentSelectorLabels" (list . "mailhog") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "relativa.podLabels" (list . "mailhog") | nindent 8 }}
+    spec:
+      containers:
+        - name: mailhog
+          image: {{ include "relativa.image" .Values.mailhog.image }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: smtp
+              containerPort: 1025
+            - name: http
+              containerPort: 8025
+          resources:
+            {{- toYaml .Values.mailhog.resources | nindent 12 }}
+          readinessProbe:
+            tcpSocket:
+              port: smtp
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20

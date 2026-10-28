@@ -1,0 +1,41 @@
+{{- define "relativa.migration.jobSpec" -}}
+backoffLimit: {{ .Values.migration.backoffLimit }}
+template:
+  metadata:
+    labels:
+      {{- include "relativa.podLabels" (list . "migration") | nindent 6 }}
+  spec:
+    restartPolicy: OnFailure
+    initContainers:
+      - name: wait-for-postgres
+        image: {{ include "relativa.image" .Values.postgres.image }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["sh", "-c", "until pg_isready -h \"$DB_HOST\" -p \"$DB_PORT\"; do sleep 2; done"]
+        envFrom:
+          - configMapRef:
+              name: {{ include "relativa.configMapName" . }}
+        resources:
+          {{- toYaml .Values.initResources.postgres | nindent 10 }}
+    containers:
+      - name: migration
+        image: {{ include "relativa.appImage" (list . .Values.migration.image) }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        envFrom:
+          - configMapRef:
+              name: {{ include "relativa.configMapName" . }}
+        env:
+          {{- include "relativa.secretEnv" (list . "DB_PASS" "DB_PASS") | nindent 10 }}
+          - name: ConnectionStrings__Default
+            value: Host=$(DB_HOST);Port=$(DB_PORT);Database=$(DB_NAME);Username=$(DB_USER);Password=$(DB_PASS)
+        resources:
+          {{- toYaml .Values.migration.resources | nindent 10 }}
+{{- end }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "relativa.migrationJobName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relativa.componentLabels" (list . "migration") | nindent 4 }}
+spec:
+  {{- include "relativa.migration.jobSpec" . | nindent 2 }}

@@ -1,0 +1,20 @@
+apiVersion: v2
+name: relativa
+description: Relativa CRM -- multi-tenant sales workspace (gateway, auth, core, graph, audit, ml, client) with PostgreSQL, RabbitMQ and MailHog.
+type: application
+version: 0.1.0
+appVersion: "1.1.0"
+home: https://github.com/totalbyte/devops-practice
+icon: https://raw.githubusercontent.com/totalbyte/devops-practice/main/Client/public/relativa-icon.svg
+sources:
+  - https://github.com/totalbyte/devops-practice
+keywords:
+  - crm
+  - dotnet
+  - vue
+  - django
+  - postgresql
+  - rabbitmq
+maintainers:
+  - name: Vlad Antoniuk
+    url: https://github.com/totalbyte

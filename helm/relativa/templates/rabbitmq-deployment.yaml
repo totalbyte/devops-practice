@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "relativa.componentName" (list . "rabbitmq") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relativa.componentLabels" (list . "rabbitmq") | nindent 4 }}
+spec:
+  replicas: {{ .Values.rabbitmq.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "relativa.componentSelectorLabels" (list . "rabbitmq") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "relativa.podLabels" (list . "rabbitmq") | nindent 8 }}
+    spec:
+      containers:
+        - name: rabbitmq
+          image: {{ include "relativa.image" .Values.rabbitmq.image }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: amqp
+              containerPort: 5672
+            - name: management
+              containerPort: 15672
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "relativa.configMapName" . }}
+                  key: RABBITMQ_USER
+            {{- include "relativa.secretEnv" (list . "RABBITMQ_DEFAULT_PASS" "RABBITMQ_PASS") | nindent 12 }}
+          resources:
+            {{- toYaml .Values.rabbitmq.resources | nindent 12 }}
+          readinessProbe:
+            exec:
+              command: ["rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: amqp
+            initialDelaySeconds: 60
+            periodSeconds: 20

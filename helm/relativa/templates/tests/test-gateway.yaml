@@ -1,0 +1,37 @@
+{{- $gateway := printf "http://%s:%v" (include "relativa.componentName" (list . "gateway")) .Values.gateway.service.port }}
+{{- $client := printf "http://%s:%v" (include "relativa.componentName" (list . "client")) .Values.client.service.port }}
+{{- $version := include "relativa.imageTag" (list . .Values.gateway.image) }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "relativa.componentName" (list . "test-gateway") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relativa.componentLabels" (list . "test") | nindent 4 }}
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-weight: "1"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: test
+      image: {{ include "relativa.image" .Values.initImages.busybox }}
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      command:
+        - sh
+        - -c
+        - |
+          set -e
+          echo "GET {{ $gateway }}/health"
+          wget -q -T 5 -O /dev/null "{{ $gateway }}/health"
+          version=$(wget -q -T 5 -O - "{{ $gateway }}/version")
+          echo "GET {{ $gateway }}/version -> $version"
+          echo "$version" | grep -q '"version":"{{ $version }}"' || { echo "FAIL: gateway should run {{ $version }}"; exit 1; }
+          echo "POST {{ $gateway }}/auth/api/v1/auth/login (wrong password, expect 401)"
+          wget -S -T 10 -O /dev/null --header "Content-Type: application/json" --post-data '{"email":"helm-test@relativa.invalid","password":"wrong-password"}' "{{ $gateway }}/auth/api/v1/auth/login" 2>&1 | grep -q "HTTP/1.1 401" || { echo "FAIL: auth did not answer 401 through the gateway"; exit 1; }
+          echo "GET {{ $client }}/"
+          wget -q -T 10 -O - --header "Host: localhost" "{{ $client }}/" | grep -q 'id="app"' || { echo "FAIL: client did not serve the SPA"; exit 1; }
+          echo "all gateway checks passed"
+      resources:
+        {{- toYaml .Values.tests.resources | nindent 8 }}

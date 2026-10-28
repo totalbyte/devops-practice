@@ -20,3 +20,5 @@ ci/
 TestR/
 DBNAV/
 ENDPOINTS/
+k8s/
+helm/

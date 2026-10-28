@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "relativa.componentName" (list . "client") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relativa.componentLabels" (list . "client") | nindent 4 }}
+spec:
+  type: {{ .Values.client.service.type }}
+  selector:
+    {{- include "relativa.componentSelectorLabels" (list . "client") | nindent 4 }}
+  {{- with .Values.client.service.sessionAffinity }}
+  sessionAffinity: {{ . }}
+  {{- end }}
+  ports:
+    - name: http
+      port: {{ .Values.client.service.port }}
+      targetPort: http

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "relativa.componentName" (list . "mailhog") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relativa.componentLabels" (list . "mailhog") | nindent 4 }}
+spec:
+  type: {{ .Values.mailhog.service.type }}
+  selector:
+    {{- include "relativa.componentSelectorLabels" (list . "mailhog") | nindent 4 }}
+  ports:
+    - name: smtp
+      port: {{ .Values.mailhog.service.ports.smtp }}
+      targetPort: smtp
+    - name: http
+      port: {{ .Values.mailhog.service.ports.http }}
+      targetPort: http

@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "relativa.componentName" (list . "test-services") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relativa.componentLabels" (list . "test") | nindent 4 }}
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: test
+      image: {{ include "relativa.image" .Values.initImages.busybox }}
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
+      command:
+        - sh
+        - -c
+        - |
+          set -e
+          {{- range $component, $path := dict "auth" "/health" "core" "/health" "graph" "/" "audit" "/health" "ml" "/api/ml/health/" }}
+          {{- $url := printf "http://%s:%v%s" (include "relativa.componentName" (list $ $component)) (index $.Values $component).service.port $path }}
+          echo "GET {{ $url }}"
+          wget -q -T 10 -O /dev/null "{{ $url }}"
+          {{- end }}
+          echo "all backend services are healthy"
+      resources:
+        {{- toYaml .Values.tests.resources | nindent 8 }}

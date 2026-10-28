@@ -1,0 +1,49 @@
+{{- if .Values.backup.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "relativa.componentName" (list . "backup") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relativa.componentLabels" (list . "backup") | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        {{- include "relativa.podLabels" (list . "backup") | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: backup
+          image: {{ include "relativa.image" .Values.postgres.image }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "relativa.configMapName" . }}
+          env:
+            {{- include "relativa.secretEnv" (list . "PGPASSWORD" "DB_PASS") | nindent 12 }}
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              file="/backups/{{ .Release.Name }}-before-rev{{ .Release.Revision }}-$(date +%Y%m%d-%H%M%S).dump"
+              pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -Fc -f "$file"
+              echo "backup written: $file ($(du -h "$file" | cut -f1))"
+              ls -1t /backups/*.dump | tail -n +{{ add .Values.backup.keep 1 }} | xargs -r rm -f
+              ls -l /backups
+          resources:
+            {{- toYaml .Values.backup.resources | nindent 12 }}
+          volumeMounts:
+            - name: backups
+              mountPath: /backups
+      volumes:
+        - name: backups
+          persistentVolumeClaim:
+            claimName: {{ include "relativa.componentName" (list . "backups") }}
+{{- end }}

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "relativa.componentName" (list . "ml") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relativa.componentLabels" (list . "ml") | nindent 4 }}
+spec:
+  type: {{ .Values.ml.service.type }}
+  selector:
+    {{- include "relativa.componentSelectorLabels" (list . "ml") | nindent 4 }}
+  {{- with .Values.ml.service.sessionAffinity }}
+  sessionAffinity: {{ . }}
+  {{- end }}
+  ports:
+    - name: http
+      port: {{ .Values.ml.service.port }}
+      targetPort: http

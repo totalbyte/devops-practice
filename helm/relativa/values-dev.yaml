@@ -1,0 +1,75 @@
+image:
+  tag: "1.1.0"
+
+ingress:
+  enabled: false
+
+gateway:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 96Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+auth:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 96Mi
+    limits:
+      cpu: 500m
+      memory: 320Mi
+
+core:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 96Mi
+    limits:
+      cpu: 500m
+      memory: 320Mi
+
+graph:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 96Mi
+    limits:
+      cpu: 500m
+      memory: 320Mi
+
+audit:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 25m
+      memory: 96Mi
+    limits:
+      cpu: 500m
+      memory: 320Mi
+
+ml:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 768Mi
+
+client:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 192Mi
+    limits:
+      cpu: "1"
+      memory: 768Mi

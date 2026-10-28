@@ -1,6 +1,6 @@
 # Project Status -- What is Done and What is Not
 
-> **Last verified:** 2026-10-21 (Migration image moved to `runtime:10.0`; known issue removed. Earlier: 2026-10-08 — Kubernetes deployment via `k8s/` on minikube — see [KUBERNETES.md](KUBERNETES.md); client image starts Vite directly. Earlier: 2026-09-23 — CI/CD pipeline implemented — see [CI-PIPELINE.md](CI-PIPELINE.md); Gateway, Migration, and Client test suites added; ML happy-path test fixed; known issues refreshed.)
+> **Last verified:** 2026-10-22 (Helm chart `helm/relativa` -- see [HELM.md](HELM.md).) Earlier: 2026-10-21 (Migration image moved to `runtime:10.0`; known issue removed. Earlier: 2026-10-08 — Kubernetes deployment via `k8s/` on minikube — see [KUBERNETES.md](KUBERNETES.md); client image starts Vite directly. Earlier: 2026-09-23 — CI/CD pipeline implemented — see [CI-PIPELINE.md](CI-PIPELINE.md); Gateway, Migration, and Client test suites added; ML happy-path test fixed; known issues refreshed.)
 
 > **Maintenance obligation:** If you implement a feature that was listed as stub or TODO, move it to the "Implemented" section. If you introduce a new known issue or break something, add it to "Known Issues." Always update the "Last verified" date. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -126,6 +126,15 @@
 - 7 app Deployments × 2 replicas on release images (`1.0.0`), requests/limits, readiness + liveness probes, zero-downtime `RollingUpdate`; Postgres on a PVC; migrations as a Job; init containers replace `depends_on`.
 - ConfigMap `relativa-config` + Secret `relativa-secrets` (dev values); Ingress with `relativa.local` / `api.relativa.local` / `mail.relativa.local`; cookie + ClientIP affinity for SignalR.
 - Verified: self-healing, scaling, rolling update 1.0.0 → 1.1.0 and rollback with 0 failed requests (k6), ImagePullBackOff diagnosis. Details: [KUBERNETES.md](KUBERNETES.md), [KUBERNETES-DEPLOY.md](../../KUBERNETES-DEPLOY.md).
+
+### Helm chart
+
+- `helm/relativa/` (chart 0.1.0, appVersion 1.1.0): the `k8s/` objects as templates, names from the release, one-command install on a clean cluster.
+- `values.yaml` = development (1 replica, no Ingress, port-forward); `values-prod.yaml` = the `k8s/` setup (2 replicas, Ingress, tag 1.0.0). Passwords generated on install and kept on upgrade.
+- Pre-upgrade hook dumps the database to a backup PVC; `helm test` checks every backend and the gateway → auth → database path.
+- Verified on minikube with Helm 3.20: install, upgrade via `--set` and via another values file, uninstall leaving an empty namespace, pre-upgrade hook, `helm test` (incl. detecting a `kubectl set image` drift). History and rollback are part of the Lab 4 demo ([HELM-LAB4.md](../runbooks/HELM-LAB4.md)). Details: [HELM.md](HELM.md).
+- No CI job lints or renders the chart yet (`helm lint` / `helm template` run by hand).
+- Known limitation: the chart and `k8s/` duplicate the workload definitions; a change to env vars, ports or probes has to be made in both.
 
 ### Docker Compose
 
@@ -277,7 +286,7 @@
 
 - ~~CI/CD pipeline (GitHub Actions or similar).~~ *(done — see [CI-PIPELINE.md](CI-PIPELINE.md))*
 - ~~Test projects (at minimum: unit tests for Application services, integration tests for API endpoints).~~ *(done — every service has a test suite that runs in CI)*
-- Deployment stage (CD) consuming the GHCR images. *(partial — `k8s/` deploys the release images to a local minikube cluster by hand; no automated deploy from CI.)*
+- Deployment stage (CD) consuming the GHCR images. *(partial — `k8s/` and the Helm chart `helm/relativa/` deploy the release images to a local minikube cluster by hand; no automated deploy from CI.)*
 - SignalR backplane (e.g. Redis) so Core/Graph hubs broadcast across replicas in Kubernetes.
 - Client production image: multi-stage `vite build` → nginx, plus vite 7+ upgrade (removes the esbuild entries from `.trivyignore`, which expire 2027-03-31).
 - Extend Dependabot from GitHub Actions to NuGet, npm, and pip.
