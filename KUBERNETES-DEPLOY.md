@@ -2,7 +2,7 @@
 
 This manual runs the full Relativa stack in a local **minikube** cluster from the manifests in [`k8s/`](k8s/). The stack uses the release images published by CI to GHCR (`ghcr.io/totalbyte/relativa-<service>:<version>`), so nothing is built locally.
 
-For the architecture behind the manifests (objects, start-up order, probes, affinity) see [docs/ai-guides/KUBERNETES.md](docs/ai-guides/KUBERNETES.md). For Docker Compose see [DOCKER-BUILD.md](DOCKER-BUILD.md).
+For the architecture behind the manifests (objects, start-up order, probes, affinity) see [docs/ai-guides/KUBERNETES.md](docs/ai-guides/KUBERNETES.md). For Docker Compose see [DOCKER-BUILD.md](DOCKER-BUILD.md). To install the same stack as a Helm release instead (do not mix both in one namespace) see [helm/relativa/README.md](helm/relativa/README.md).
 
 ## Quick Start
 

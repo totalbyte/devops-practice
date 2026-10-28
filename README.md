@@ -46,6 +46,7 @@
 - [Architecture](#architecture)
 - [Quick Start](#quick-start)
 - [Kubernetes Deployment](#kubernetes-deployment)
+- [Helm Chart](#helm-chart)
 - [Environment Configuration](#environment-configuration)
 - [Database & Seed Data](#database--seed-data)
 - [API Documentation](#api-documentation)
@@ -388,6 +389,28 @@ The committed values are **development-only placeholders**, not real credentials
 
 ---
 
+## Helm Chart
+
+The same stack is packaged as a Helm 3 chart in [`helm/relativa/`](helm/relativa/): the `k8s/` manifests as templates, with object names built from the release name and image tags, replicas, service ports, resources, configuration and Ingress taken from values. One command installs it on a clean cluster:
+
+```powershell
+helm install relativa helm/relativa -n antoniuk --create-namespace -f helm/relativa/values-dev.yaml --wait --timeout 10m
+helm install relativa helm/relativa -n antoniuk --create-namespace -f helm/relativa/values-prod.yaml --wait --timeout 10m
+```
+
+| | `values-dev.yaml` (= defaults) | `values-prod.yaml` |
+|---|---|---|
+| Replicas per app service | 1 | 2 |
+| Relativa images | `1.1.0` | `1.0.0` |
+| Resources | smaller requests | as in `k8s/` |
+| Ingress | off -- `kubectl port-forward` to `localhost:3000` / `:8080` | on -- `relativa.local`, `api.relativa.local`, `mail.relativa.local` |
+
+Passwords are not stored in any values file: left empty, they are generated on install and kept on upgrade. Every `helm upgrade` first runs a pre-upgrade hook that dumps the database to a backup volume, and `helm test relativa -n antoniuk` checks every service and the gateway → auth → database path.
+
+📖 Parameters, environments, value precedence, hooks: [helm/relativa/README.md](helm/relativa/README.md) · Architecture: [docs/ai-guides/HELM.md](docs/ai-guides/HELM.md) · Lab 4 demo commands: [docs/runbooks/HELM-LAB4.md](docs/runbooks/HELM-LAB4.md)
+
+---
+
 ## Environment Configuration
 
 Configuration is driven by a single `.env` file at the repo root. Copy the template and adjust as needed:
@@ -485,6 +508,8 @@ Every backend service ships interactive **Scalar** API docs and a raw OpenAPI sp
 | [AI-GUIDES-INDEX.md](AI-GUIDES-INDEX.md) | Deep technical guides (architecture, microservices, runbooks) |
 | [docs/ai-guides/CI-PIPELINE.md](docs/ai-guides/CI-PIPELINE.md) | CI pipeline: lint/build/test per service, image scanning, GHCR publishing, required checks |
 | [docs/ai-guides/KUBERNETES.md](docs/ai-guides/KUBERNETES.md) | Kubernetes manifests: topology, start-up order, config, probes, affinity |
+| [helm/relativa/README.md](helm/relativa/README.md) | Helm chart: install for dev/prod, parameters, value precedence, hook and tests, lifecycle |
+| [docs/ai-guides/HELM.md](docs/ai-guides/HELM.md) | Helm chart internals: helpers, naming, migration Job hashing, secrets, hooks, how it maps to `k8s/` |
 
 ---
 

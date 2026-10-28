@@ -1,6 +1,6 @@
 # Project Overview -- What is Relativa?
 
-> **Last verified:** 2026-10-08 (ML on Django 5.2 LTS; Kubernetes manifests in `k8s/`, KUBERNETES-DEPLOY.md.) Earlier: 2026-09-23 (CI/CD + testing rows in the tech stack; repo layout shows workflows, test projects, and CI-related root files.)
+> **Last verified:** 2026-10-22 (Helm chart in `helm/relativa/`, HELM-LAB4 runbook.) Earlier: 2026-10-08 (ML on Django 5.2 LTS; Kubernetes manifests in `k8s/`, KUBERNETES-DEPLOY.md.) Earlier: 2026-09-23 (CI/CD + testing rows in the tech stack; repo layout shows workflows, test projects, and CI-related root files.)
 
 > **Maintenance obligation:** If you change the general purpose, domain model, tech stack, or repo layout, update this file and its "Last verified" date before finishing your task. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -61,7 +61,7 @@ The domain model lives entirely in the shared Persistence library (`Persistence/
 | Logging | Serilog (console + rolling file) |
 | API docs | OpenAPI + Scalar |
 | Containerization | Docker Compose (single bridge network); images published to GHCR |
-| Orchestration | Kubernetes manifests in `k8s/` (minikube, ingress-nginx) -- see [KUBERNETES.md](KUBERNETES.md) |
+| Orchestration | Kubernetes manifests in `k8s/` (minikube, ingress-nginx) -- see [KUBERNETES.md](KUBERNETES.md); the same stack as a Helm 3 chart in `helm/relativa/` -- see [HELM.md](HELM.md) |
 | CI/CD | GitHub Actions (`.github/workflows/ci.yaml`), Trivy image scanning, Dependabot for action pins -- see [CI-PIPELINE.md](CI-PIPELINE.md) |
 | Code quality | `dotnet format` + root `.editorconfig`, Ruff (ML), ESLint + `vue-tsc` (Client) |
 | Testing | xUnit + Testcontainers (.NET), Django test runner (ML), Vitest (Client), Playwright (E2E), k6 (load) |
@@ -86,6 +86,7 @@ Relativa/
 ├── docker-compose.images.yaml  # Override: run the stack from prebuilt (GHCR/CI) images
 ├── KUBERNETES-DEPLOY.md        # Operational Kubernetes (minikube) guide
 ├── k8s/                        # Kubernetes manifests, one object per file (kubectl apply -f k8s/)
+├── helm/relativa/              # Helm chart: k8s/ as templates, values-dev/values-prod, backup hook, tests
 │
 ├── Gateway/                    # YARP reverse proxy (.NET 10)
 │   ├── src/Relativa.Gateway/
@@ -145,6 +146,8 @@ Relativa/
 | `DOCKER-BUILD.md` | Operational Docker guide | Current and accurate. |
 | `KUBERNETES-DEPLOY.md` | Operational Kubernetes (minikube) guide | Current and accurate. |
 | `docs/runbooks/KUBERNETES-LAB3.md` | Lab 3 demo commands (Ukrainian), step by step | Current. |
+| `helm/relativa/README.md` | Helm chart: install per environment, parameters, value precedence, hook/tests, lifecycle | Current. |
+| `docs/runbooks/HELM-LAB4.md` | Lab 4 demo commands (Ukrainian), step by step | Current. |
 | `docs/runbooks/RABBITMQ-CHOREOGRAPHY.md` | Rabbit choreography + DLQ operations | Describes exchanges, purge commands, idempotency table |
 | `SCALAR-GUIDE.md` | Scalar API docs walkthrough | Current and accurate. |
 | `CONTRIBUTORS.md` | Contributor list | -- |

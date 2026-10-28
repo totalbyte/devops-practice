@@ -1,8 +1,8 @@
 # Relativa -- AI Agent Context Guides
 
-> **Last verified:** 2026-10-08 (Kubernetes: KUBERNETES.md added for the `k8s/` manifests; release image tags in CI-PIPELINE.md.)
+> **Last verified:** 2026-10-22 (Helm: HELM.md added for the `helm/relativa` chart; matrix rows for chart changes.) Earlier: 2026-10-08 (Kubernetes: KUBERNETES.md added for the `k8s/` manifests; release image tags in CI-PIPELINE.md.)
 
-Relativa is a multi-tenant CRM / sales-workspace platform built as a microservice monorepo. It includes .NET 10 backend services, a Vue 3 SPA client, a Django ML service, PostgreSQL 16, a YARP API gateway, and SignalR for real-time graph updates. Everything runs locally via Docker Compose or in a minikube cluster from `k8s/`; GitHub Actions lints, builds, tests, scans, and publishes every service image to GHCR.
+Relativa is a multi-tenant CRM / sales-workspace platform built as a microservice monorepo. It includes .NET 10 backend services, a Vue 3 SPA client, a Django ML service, PostgreSQL 16, a YARP API gateway, and SignalR for real-time graph updates. Everything runs locally via Docker Compose or in a minikube cluster -- from the plain manifests in `k8s/` or the Helm chart in `helm/relativa/`; GitHub Actions lints, builds, tests, scans, and publishes every service image to GHCR.
 
 ---
 
@@ -14,9 +14,10 @@ Relativa is a multi-tenant CRM / sales-workspace platform built as a microservic
 |---|---|
 | Touched **frontend layouts, brand mark, design tokens, or user-facing copy** | [FRONTEND-UI.md](docs/ai-guides/FRONTEND-UI.md) |
 | Added, removed, or changed an **endpoint** | [MICROSERVICES.md](docs/ai-guides/MICROSERVICES.md) |
-| Added or removed a **service** | [MICROSERVICES.md](docs/ai-guides/MICROSERVICES.md), [DOCKER-SETUP.md](docs/ai-guides/DOCKER-SETUP.md), [KUBERNETES.md](docs/ai-guides/KUBERNETES.md) (+ Deployment/Service in `k8s/`), [PROJECT-OVERVIEW.md](docs/ai-guides/PROJECT-OVERVIEW.md) |
-| Changed **Docker Compose, Dockerfiles, networking, or env vars** | [DOCKER-SETUP.md](docs/ai-guides/DOCKER-SETUP.md) -- and for env vars / ports / health endpoints also the matching Deployment in `k8s/` + [KUBERNETES.md](docs/ai-guides/KUBERNETES.md) |
-| Changed anything under **`k8s/`** (manifests, image tags, replicas, ConfigMap/Secret keys, Ingress) | [KUBERNETES.md](docs/ai-guides/KUBERNETES.md), plus [KUBERNETES-DEPLOY.md](KUBERNETES-DEPLOY.md) if operator steps change |
+| Added or removed a **service** | [MICROSERVICES.md](docs/ai-guides/MICROSERVICES.md), [DOCKER-SETUP.md](docs/ai-guides/DOCKER-SETUP.md), [KUBERNETES.md](docs/ai-guides/KUBERNETES.md) (+ Deployment/Service in `k8s/`), [HELM.md](docs/ai-guides/HELM.md) (+ templates and values in `helm/relativa/`, gateway YARP loop, `test-services`), [PROJECT-OVERVIEW.md](docs/ai-guides/PROJECT-OVERVIEW.md) |
+| Changed **Docker Compose, Dockerfiles, networking, or env vars** | [DOCKER-SETUP.md](docs/ai-guides/DOCKER-SETUP.md) -- and for env vars / ports / health endpoints also the matching Deployment in `k8s/` + [KUBERNETES.md](docs/ai-guides/KUBERNETES.md) **and** the matching template in `helm/relativa/templates/` + [HELM.md](docs/ai-guides/HELM.md) |
+| Changed anything under **`k8s/`** (manifests, image tags, replicas, ConfigMap/Secret keys, Ingress) | [KUBERNETES.md](docs/ai-guides/KUBERNETES.md), plus [KUBERNETES-DEPLOY.md](KUBERNETES-DEPLOY.md) if operator steps change; mirror workload changes in the Helm chart |
+| Changed anything under **`helm/relativa/`** (templates, helpers, values keys/defaults, hooks, tests) | [HELM.md](docs/ai-guides/HELM.md), the parameter table in [helm/relativa/README.md](helm/relativa/README.md), `version` in `Chart.yaml` (SemVer); [HELM-LAB4.md](docs/runbooks/HELM-LAB4.md) if demo commands change. A new Relativa release tag → `appVersion` |
 | Changed **Rabbit choreography topology / DLQs / ops playbooks** | [RABBITMQ-CHOREOGRAPHY.md](docs/runbooks/RABBITMQ-CHOREOGRAPHY.md), plus [ARCHITECTURE.md](docs/ai-guides/ARCHITECTURE.md) |
 | Changed **architecture patterns, layers, persistence model, validation, or auth flows** | [ARCHITECTURE.md](docs/ai-guides/ARCHITECTURE.md) |
 | **Implemented a feature** that was listed as stub/TODO, or introduced a **new known issue** | [PROJECT-STATUS.md](docs/ai-guides/PROJECT-STATUS.md) |
@@ -43,6 +44,7 @@ Relativa is a multi-tenant CRM / sales-workspace platform built as a microservic
 | **Architecture** | [docs/ai-guides/ARCHITECTURE.md](docs/ai-guides/ARCHITECTURE.md) | Layered structure, persistence library, validation, auth flow, domain model, conventions |
 | **Docker Setup** | [docs/ai-guides/DOCKER-SETUP.md](docs/ai-guides/DOCKER-SETUP.md) | Compose topology, dependency order, networking, Dockerfiles, environment config |
 | **Kubernetes** | [docs/ai-guides/KUBERNETES.md](docs/ai-guides/KUBERNETES.md) | `k8s/` manifests: topology, start-up order (Job + init containers), ConfigMap/Secret, probes, rolling updates, Ingress, SignalR affinity |
+| **Helm** | [docs/ai-guides/HELM.md](docs/ai-guides/HELM.md) | `helm/relativa` chart: relation to `k8s/`, named templates, naming/labels, migration Job hashing, generated secrets, checksums, pre-upgrade backup hook, release tests |
 | **Project Status** | [docs/ai-guides/PROJECT-STATUS.md](docs/ai-guides/PROJECT-STATUS.md) | What is implemented, what is stubbed, known issues, roadmap |
 | **Audit Coverage Matrix** | [docs/ai-guides/AUDIT-COVERAGE-MATRIX.md](docs/ai-guides/AUDIT-COVERAGE-MATRIX.md) | Current auditable-table scope and gap tracking |
 | **Audit Agent Requirements** | [docs/ai-guides/AUDIT-AGENT-REQUIREMENTS.md](docs/ai-guides/AUDIT-AGENT-REQUIREMENTS.md) | Mandatory rules for AI agents when creating/changing DB entities/tables |

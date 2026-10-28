@@ -1,10 +1,12 @@
 # Kubernetes -- Manifests, Topology, and Operations Model
 
-> **Last verified:** 2026-10-08 (Initial `k8s/` manifests: full stack in namespace `antoniuk` on minikube, release images `1.0.0`, Ingress hosts `relativa.local` / `api.relativa.local` / `mail.relativa.local`.)
+> **Last verified:** 2026-10-22 (Pointer to the Helm chart that mirrors these manifests.) Earlier: 2026-10-08 (Initial `k8s/` manifests: full stack in namespace `antoniuk` on minikube, release images `1.0.0`, Ingress hosts `relativa.local` / `api.relativa.local` / `mail.relativa.local`.)
 
 > **Maintenance obligation:** If you change anything under `k8s/`, add or remove a service, change a service's env vars, ports, health endpoints, or image names, update this file and its "Last verified" date before finishing your task. A new env var used in `docker-compose.yaml` usually needs the same key in the matching Deployment (and, if shared, in `k8s/01-configmap.yaml` / `k8s/02-secret.yaml`). See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
 > **Note:** For operational instructions (start the cluster, deploy, access, reset, troubleshooting) see [KUBERNETES-DEPLOY.md](../../KUBERNETES-DEPLOY.md) at the repo root. This guide explains how the manifests fit together and why.
+
+> **Helm chart:** `helm/relativa/` renders the same workloads as templates (names prefixed with the release, e.g. `relativa-gateway`; selectors use `app.kubernetes.io/component` instead of `name`). Everything below about start-up order, probes, configuration and affinity applies to it too; chart-specific mechanics are in [HELM.md](HELM.md). Changes to a workload's env vars, ports, probes or images must be made in both places.
 
 ---
 
