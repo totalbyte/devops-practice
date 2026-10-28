@@ -411,6 +411,18 @@ Passwords are not stored in any values file: left empty, they are generated on i
 
 ---
 
+## GitOps (Argo CD)
+
+The minikube deployment is described in a separate repository, [`totalbyte/relativa-gitops`](https://github.com/totalbyte/relativa-gitops): a copy of this chart with `values-minikube.yaml`, the Argo CD `Application` for it, and a root `Application` (App of Apps). Only the root object is applied by hand; Argo CD keeps the cluster equal to that repository, so a release is a commit that changes the image tag there.
+
+```powershell
+kubectl apply -f bootstrap/root.yaml   # in a clone of relativa-gitops
+```
+
+📖 Architecture and Argo CD specifics: [docs/ai-guides/GITOPS.md](docs/ai-guides/GITOPS.md) · Lab 5 demo commands: [docs/runbooks/GITOPS-LAB5.md](docs/runbooks/GITOPS-LAB5.md)
+
+---
+
 ## Environment Configuration
 
 Configuration is driven by a single `.env` file at the repo root. Copy the template and adjust as needed:
@@ -510,6 +522,7 @@ Every backend service ships interactive **Scalar** API docs and a raw OpenAPI sp
 | [docs/ai-guides/KUBERNETES.md](docs/ai-guides/KUBERNETES.md) | Kubernetes manifests: topology, start-up order, config, probes, affinity |
 | [helm/relativa/README.md](helm/relativa/README.md) | Helm chart: install for dev/prod, parameters, value precedence, hook and tests, lifecycle |
 | [docs/ai-guides/HELM.md](docs/ai-guides/HELM.md) | Helm chart internals: helpers, naming, migration Job hashing, secrets, hooks, how it maps to `k8s/` |
+| [docs/ai-guides/GITOPS.md](docs/ai-guides/GITOPS.md) | GitOps with Argo CD: the `relativa-gitops` repository, App of Apps, sync policy, release flow, drift and rollback |
 
 ---
 

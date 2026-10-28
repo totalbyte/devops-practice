@@ -27,6 +27,8 @@ const showNotifications = ref(false);
 
 const { inboxCount, hasInbox, ensureLoaded } = useInvitationsInbox();
 
+const appVersion = import.meta.env.VITE_APP_VERSION;
+
 const userInitials = computed(() => {
   if (!auth.user) return '';
   return `${auth.user.firstName?.[0] ?? ''}${auth.user.lastName?.[0] ?? ''}`.toUpperCase();
@@ -422,6 +424,14 @@ onMounted(async () => {
             </div>
             <i class="nav-label pi pi-chevron-right text-[10px] text-ink-400 shrink-0" />
           </button>
+
+          <p
+            v-if="appVersion"
+            class="nav-label px-2 pt-2 text-[11px] text-ink-400"
+            data-testid="sidebar-app-version"
+          >
+            Relativa v{{ appVersion }}
+          </p>
         </div>
       </aside>
 

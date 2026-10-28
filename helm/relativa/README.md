@@ -49,9 +49,11 @@ Switch an installed release to the other environment with `helm upgrade relativa
 | `ingress.className` | `nginx` | IngressClass |
 | `ingress.annotations` | cookie affinity, 3600 s proxy timeouts | Kept from `k8s/` for SignalR (see [KUBERNETES.md](../../docs/ai-guides/KUBERNETES.md)) |
 | `ingress.hosts.client` / `.gateway` / `.mailhog` | `relativa.local` / `api.relativa.local` / `mail.relativa.local` | Ingress hosts |
+| `progressDeadlineSeconds` | unset (field omitted → Kubernetes default 600 s) | `spec.progressDeadlineSeconds` of the seven app Deployments: a rollout without progress for this long is reported as failed (`ProgressDeadlineExceeded`, Argo CD health `Degraded`) |
 | `<service>.replicaCount` | `1` | Replicas of `gateway`, `auth`, `core`, `graph`, `audit`, `ml`, `client` |
 | `<service>.image.repository` | `relativa-<service>` | Image name under `image.registry` |
 | `<service>.image.tag` | `""` (→ `image.tag`) | Per-service tag override |
+| `<service>.progressDeadlineSeconds` | unset (→ `progressDeadlineSeconds`) | Per-service progress deadline |
 | `<service>.service.type` / `.port` | `ClusterIP` / 8080, 8081, 8082, 8083, 8086, 8084, 3000 | Service type and port |
 | `core.service.sessionAffinity`, `graph.service.sessionAffinity` | `ClientIP` | Sticky SignalR connections from the gateway |
 | `<service>.resources` | see `values.yaml` | Requests and limits |
@@ -158,7 +160,7 @@ kubectl get secrets -n antoniuk -l owner=helm --show-labels
 
 | Field | Current | What it versions | When it changes |
 |---|---|---|---|
-| `version` | `0.1.0` | The **chart** itself: templates, `values.yaml` defaults, helpers, NOTES | Any change under `helm/relativa/`, following SemVer: a fix in a template is a patch, a new value is a minor, a renamed or removed value (breaks existing `-f` files / `--set` flags) is a major |
+| `version` | `0.2.0` | The **chart** itself: templates, `values.yaml` defaults, helpers, NOTES | Any change under `helm/relativa/`, following SemVer: a fix in a template is a patch, a new value is a minor, a renamed or removed value (breaks existing `-f` files / `--set` flags) is a major |
 | `appVersion` | `1.1.0` | The **Relativa release** the chart deploys by default | A new git tag `v*` -- CI publishes `ghcr.io/totalbyte/relativa-<service>:<x.y.z>` for all eight images, and `appVersion` is set to that `x.y.z` |
 
 For this project:
@@ -173,7 +175,7 @@ helm show chart helm/relativa
 helm list -n antoniuk
 ```
 
-`helm list` shows both: `CHART relativa-0.1.0` and `APP VERSION 1.1.0`.
+`helm list` shows both: `CHART relativa-0.2.0` and `APP VERSION 1.1.0`.
 
 ## Environments
 
