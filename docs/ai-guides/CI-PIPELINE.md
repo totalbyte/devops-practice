@@ -1,6 +1,6 @@
 # CI Pipeline -- GitHub Actions, Images, Registry
 
-> **Last verified:** 2026-10-22 (Root `.dockerignore` excludes `k8s/` and `helm/`; no CI job lints the Helm chart.) Earlier: 2026-10-21 (New Trivy findings: Migration on `runtime:10.0`, vite 6.4.5, four more esbuild Go stdlib CVEs accepted. Earlier: 2026-10-08 — release tags, `APP_VERSION`, Django 5.2, npm removed from the client image.)
+> **Last verified:** 2026-10-28 (`E2E · Playwright` pinned to `ubuntu-24.04`: `ubuntu-latest` moved to 26.04, where Playwright 1.59 cannot install Chromium.) Earlier: 2026-10-22 (Root `.dockerignore` excludes `k8s/` and `helm/`; no CI job lints the Helm chart.) Earlier: 2026-10-21 (New Trivy findings: Migration on `runtime:10.0`, vite 6.4.5, four more esbuild Go stdlib CVEs accepted. Earlier: 2026-10-08 — release tags, `APP_VERSION`, Django 5.2, npm removed from the client image.)
 
 > **Maintenance obligation:** If you change `.github/workflows/`, `.github/actions/`, lint configuration (`.editorconfig`, `ML/pyproject.toml` Ruff section, `Client/eslint.config.js`), `.trivyignore`, `.dockerignore` files, or `docker-compose.images.yaml`, update this file and its "Last verified" date before finishing your task. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -150,7 +150,7 @@ Both jobs use the local composite action `.github/actions/start-stack`, which do
 
 | Check name | Tool | Gate | Artifacts |
 |---|---|---|---|
-| `E2E · Playwright` | `tests/e2e` (Chromium, 1 retry in CI) | any failed spec | `playwright-report` (HTML + traces), `e2e-compose-logs` on failure |
+| `E2E · Playwright` | `tests/e2e` (Chromium, 1 retry in CI) on `ubuntu-24.04` -- pinned because Playwright 1.59 has no Chromium build for `ubuntu-latest` = 26.04; move back once `@playwright/test` supports it | any failed spec | `playwright-report` (HTML + traces), `e2e-compose-logs` on failure |
 | `Load · k6` | `tests/load/relativa.js`, smoke profile, 1 req/s per scenario (17 scenarios), 15 s | per-scenario `p(95) < 3000 ms` and error rate ≤ 5 % (k6 thresholds → non-zero exit) | `k6-report` (web dashboard HTML + JSON summary), `load-compose-logs` on failure |
 
 The k6 script replaces the former NBomber project. `setup()` makes `WARMUP_ROUNDS` (default 3) untimed passes over the read endpoints first — without it, JIT/EF cold start pushed the heavy dashboard endpoints over the p95 gate on a freshly started stack. Run it locally against a running stack with `k6 run tests/load/relativa.js` (profiles: `smoke`, `ramp`, `spike`, `soak`; see the header of the script for all env vars). TestR's load suite runs the same script.
