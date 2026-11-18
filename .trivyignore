@@ -35,3 +35,11 @@ CVE-2026-78667 exp:2027-03-31
 CVE-2026-78669 exp:2027-03-31
 CVE-2026-97031 exp:2027-03-31
 CVE-2026-111943 exp:2027-03-31
+
+# --- client image: vue-i18n 9 (@intlify/core-base, @intlify/shared, vue-i18n) -------
+# XSS through iframe srcdoc sanitization of HTML in translated messages; fixed only in
+# vue-i18n 11.4.14+, a major upgrade from 9.x. The SPA renders no HTML from messages
+# (no v-html, no srcdoc, legacy: false) and all messages come from bundled locale files,
+# so the vulnerable path is not reachable. The upgrade is tracked in
+# docs/ai-guides/PROJECT-STATUS.md "Known Issues".
+CVE-2026-118257 exp:2027-03-31
