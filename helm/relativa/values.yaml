@@ -92,6 +92,10 @@ gateway:
     limits:
       cpu: 500m
       memory: 256Mi
+  rollout:
+    enabled: false
+    revisionHistoryLimit: 3
+    strategy: {}
 
 auth:
   replicaCount: 1

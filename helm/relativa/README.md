@@ -54,6 +54,9 @@ Switch an installed release to the other environment with `helm upgrade relativa
 | `<service>.image.repository` | `relativa-<service>` | Image name under `image.registry` |
 | `<service>.image.tag` | `""` (→ `image.tag`) | Per-service tag override |
 | `<service>.progressDeadlineSeconds` | unset (→ `progressDeadlineSeconds`) | Per-service progress deadline |
+| `gateway.rollout.enabled` | `false` | Render the gateway as an Argo Rollouts `Rollout` instead of a Deployment (same name, selector and pod template); needs the Argo Rollouts CRDs and controller in the cluster |
+| `gateway.rollout.revisionHistoryLimit` | `3` | Old ReplicaSets the Rollout keeps |
+| `gateway.rollout.strategy` | `{}` | `spec.strategy` of the Rollout, copied as is: `canary` (steps with `setWeight` / `pause`) or `blueGreen` (`activeService`, `previewService`, …); rendering fails if `rollout.enabled` is set without one of them |
 | `<service>.service.type` / `.port` | `ClusterIP` / 8080, 8081, 8082, 8083, 8086, 8084, 3000 | Service type and port |
 | `core.service.sessionAffinity`, `graph.service.sessionAffinity` | `ClientIP` | Sticky SignalR connections from the gateway |
 | `<service>.resources` | see `values.yaml` | Requests and limits |
@@ -89,6 +92,7 @@ Container ports (8080–8086, 3000, 5432, …) are fixed by the images and stay 
 | `postgres-*`, `rabbitmq-*`, `mailhog-*` | Deployment + Service each | `relativa-postgres`, … |
 | `migration-job.yaml` | Job | `relativa-migration-<hash>` |
 | `<service>-deployment.yaml`, `<service>-service.yaml` | Deployment + Service for the seven app services | `relativa-gateway`, … |
+| `gateway-rollout.yaml` | Argo Rollouts `Rollout` (if `gateway.rollout.enabled`; `gateway-deployment.yaml` then renders nothing) | `relativa-gateway` |
 | `ingress.yaml` | Ingress (if `ingress.enabled`) | `relativa` |
 | `backup-pvc.yaml` | PVC (if `backup.enabled`) | `relativa-backups` |
 | `backup-hook-job.yaml` | Job, `pre-upgrade` hook (if `backup.enabled`) | `relativa-backup` |

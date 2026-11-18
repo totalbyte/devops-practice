@@ -1,0 +1,29 @@
+{{- if .Values.gateway.rollout.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ include "relativa.componentName" (list . "gateway") }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "relativa.componentLabels" (list . "gateway") | nindent 4 }}
+spec:
+  replicas: {{ .Values.gateway.replicaCount }}
+  revisionHistoryLimit: {{ .Values.gateway.rollout.revisionHistoryLimit }}
+  {{- with .Values.gateway.progressDeadlineSeconds | default .Values.progressDeadlineSeconds }}
+  progressDeadlineSeconds: {{ . }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "relativa.componentSelectorLabels" (list . "gateway") | nindent 6 }}
+  template:
+    {{- include "relativa.gateway.podTemplate" . | nindent 4 }}
+  {{- with .Values.gateway.rollout.strategy }}
+  {{- if not (or .canary .blueGreen) }}
+  {{- fail "gateway.rollout.strategy must set canary or blueGreen" }}
+  {{- end }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- else }}
+  {{- fail "gateway.rollout.strategy must set canary or blueGreen" }}
+  {{- end }}
+{{- end }}
