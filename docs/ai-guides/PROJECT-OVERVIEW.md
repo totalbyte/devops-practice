@@ -1,6 +1,6 @@
 # Project Overview -- What is Relativa?
 
-> **Last verified:** 2026-10-28 (GitOps: Argo CD deploys the chart from the separate `relativa-gitops` repository, GITOPS-LAB5 runbook.) Earlier: 2026-10-22 (Helm chart in `helm/relativa/`, HELM-LAB4 runbook.) Earlier: 2026-10-08 (ML on Django 5.2 LTS; Kubernetes manifests in `k8s/`, KUBERNETES-DEPLOY.md.) Earlier: 2026-09-23 (CI/CD + testing rows in the tech stack; repo layout shows workflows, test projects, and CI-related root files.)
+> **Last verified:** 2026-11-19 (Argo Rollouts: the gateway is released as a canary `Rollout` under Argo CD, ROLLOUTS-LAB6 runbook.) Earlier: 2026-10-28 (GitOps: Argo CD deploys the chart from the separate `relativa-gitops` repository, GITOPS-LAB5 runbook.) Earlier: 2026-10-22 (Helm chart in `helm/relativa/`, HELM-LAB4 runbook.) Earlier: 2026-10-08 (ML on Django 5.2 LTS; Kubernetes manifests in `k8s/`, KUBERNETES-DEPLOY.md.) Earlier: 2026-09-23 (CI/CD + testing rows in the tech stack; repo layout shows workflows, test projects, and CI-related root files.)
 
 > **Maintenance obligation:** If you change the general purpose, domain model, tech stack, or repo layout, update this file and its "Last verified" date before finishing your task. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -149,6 +149,7 @@ Relativa/
 | `helm/relativa/README.md` | Helm chart: install per environment, parameters, value precedence, hook/tests, lifecycle | Current. |
 | `docs/runbooks/HELM-LAB4.md` | Lab 4 demo commands (Ukrainian), step by step | Current. |
 | `docs/runbooks/GITOPS-LAB5.md` | Lab 5 demo commands (Ukrainian): Argo CD, App of Apps, release by commit, drift, `Degraded`, revert | Current. |
+| `docs/runbooks/ROLLOUTS-LAB6.md` | Lab 6 demo commands (Ukrainian): Argo Rollouts controller from Git, gateway canary, `promote`, `abort`, revert | Current. |
 | `docs/runbooks/RABBITMQ-CHOREOGRAPHY.md` | Rabbit choreography + DLQ operations | Describes exchanges, purge commands, idempotency table |
 | `SCALAR-GUIDE.md` | Scalar API docs walkthrough | Current and accurate. |
 | `CONTRIBUTORS.md` | Contributor list | -- |
