@@ -23,7 +23,7 @@ Set-Alias kubectl "$env:LOCALAPPDATA\Microsoft\WinGet\Packages\Kubernetes.kubect
 
 ```powershell
 cd "D:\1Uni\4 course\1 semester\devops\relativa-gitops"
-tree /F /A bootstrap argocd-apps
+tree /F /A
 Get-Content bootstrap\root.yaml
 Get-Content argocd-apps\relativa.yaml
 Get-Content charts\relativa\values-minikube.yaml
@@ -34,7 +34,7 @@ Get-Content charts\relativa\values-minikube.yaml
 **1b.** Чарт — та сама копія, що в `helm/relativa` (ЛР4 + `progressDeadlineSeconds`):
 
 ```powershell
-git diff --no-index --stat --ignore-cr-at-eol ..\devops-practice\helm\relativa charts\relativa 2>$null
+git diff --no-index --stat=200 --ignore-cr-at-eol ..\devops-practice\helm\relativa charts\relativa 2>$null
 ```
 
 Очікувано один рядок: `/dev/null => charts/relativa/values-minikube.yaml | 37 +++`, тобто решта файлів однакові.
@@ -214,6 +214,7 @@ kubectl -n antoniuk get pods -l app.kubernetes.io/component=gateway -w
 ```powershell
 kubectl -n antoniuk scale deployment relativa-gateway --replicas=5
 argocd app get relativa --refresh
+$env:KUBECTL_EXTERNAL_DIFF = '"C:/Program Files/Git/usr/bin/diff.exe" -u'
 argocd app diff relativa
 kubectl -n antoniuk get deploy relativa-gateway
 ```
