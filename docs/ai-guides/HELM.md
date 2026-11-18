@@ -1,6 +1,6 @@
 # Helm -- Chart Internals and Conventions
 
-> **Last verified:** 2026-10-28 (Chart 0.2.0: `progressDeadlineSeconds` + per-service override; the chart is deployed by Argo CD from the `relativa-gitops` copy, see [GITOPS.md](GITOPS.md).) Earlier: 2026-10-22 (Initial chart `helm/relativa` 0.1.0, appVersion 1.1.0: `k8s/` as templates, dev/prod values, pre-upgrade backup hook, release tests; Helm 3.20.)
+> **Last verified:** 2026-11-19 (Chart 0.3.0: the gateway can run as an Argo Rollouts `Rollout` -- `gateway.rollout.*`, shared pod template `relativa.gateway.podTemplate`; Lab 6 canary, see [GITOPS.md](GITOPS.md).) Earlier: 2026-10-28 (Chart 0.2.0: `progressDeadlineSeconds` + per-service override; the chart is deployed by Argo CD from the `relativa-gitops` copy, see [GITOPS.md](GITOPS.md).) Earlier: 2026-10-22 (Initial chart `helm/relativa` 0.1.0, appVersion 1.1.0: `k8s/` as templates, dev/prod values, pre-upgrade backup hook, release tests; Helm 3.20.)
 
 > **Maintenance obligation:** If you change anything under `helm/relativa/` -- templates, helpers, values keys or defaults, `Chart.yaml` -- update this file and its "Last verified" date, the parameter table in [helm/relativa/README.md](../../helm/relativa/README.md), and bump `version` in `Chart.yaml` (SemVer: template fix = patch, new value = minor, renamed/removed value = major). A change to a service's env vars, ports, probes or images usually has to be made **both** in `k8s/` and in the matching chart template. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -36,6 +36,8 @@ helm/relativa/
     ├── {postgres,rabbitmq,mailhog}-{deployment,service}.yaml, postgres-pvc.yaml
     ├── migration-job.yaml  # also defines relativa.migration.jobSpec
     ├── {gateway,auth,core,graph,audit,ml,client}-{deployment,service}.yaml
+    ├── _gateway-pod.tpl    # relativa.gateway.podTemplate (Deployment and Rollout)
+    ├── gateway-rollout.yaml # Argo Rollouts Rollout, only with gateway.rollout.enabled
     ├── ingress.yaml
     ├── backup-pvc.yaml, backup-hook-job.yaml
     └── tests/test-{services,gateway}.yaml
@@ -63,6 +65,7 @@ One object per template file, like `k8s/`. No Namespace template: the release na
 | `relativa.configChecksum` / `relativa.checksums` | root | `checksum/config` (rendered ConfigMap) / plus `checksum/secret` (hash of `.Values.secrets`) |
 | `relativa.waitForMigration`, `relativa.waitForRabbitmq` | root | the two backend init containers |
 | `relativa.secretEnv` | `(list $ "<ENV>" "<KEY>")` | one `env` entry with `secretKeyRef` |
+| `relativa.gateway.podTemplate` | root | the gateway pod template (`metadata` + `spec`), in `_gateway-pod.tpl`; included by both `gateway-deployment.yaml` and `gateway-rollout.yaml` |
 
 Multi-argument helpers take a `list` (`index . 0` is the root context) rather than a `dict`, to keep call sites short.
 
@@ -83,6 +86,8 @@ Multi-argument helpers take a `list` (`index . 0` is the root context) rather th
 **`ASPNETCORE_ENVIRONMENT` stays `Development`.** It is a value, but `Production` makes Graph skip `MapOpenApi()`, and the gateway's aggregated Scalar document would lose the Graph group. Both environment files leave it at the default.
 
 **Progress deadline is a value.** `progressDeadlineSeconds` and `<service>.progressDeadlineSeconds` (both unset by default: the field is not rendered and Kubernetes uses 600 s, so the default render is unchanged) set how long a rollout may stall before the Deployment reports `ProgressDeadlineExceeded`. Argo CD maps that condition to health `Degraded`; before it the app is only `Progressing`. The GitOps values shorten it for the gateway only (60 s): a global short deadline marks the first install `Degraded` while backends wait for the migration and pull images.
+
+**The gateway can be a `Rollout`.** Lab 6 (progressive delivery) replaces the gateway Deployment with an Argo Rollouts `Rollout` when `gateway.rollout.enabled` is set: `gateway-deployment.yaml` is wrapped in `if not`, `gateway-rollout.yaml` in `if`, so the two never coexist (two controllers would fight over the same pods). Both include `relativa.gateway.podTemplate`, so the pod template has one source, and with the flag off the render is the same as in 0.2.0. `gateway.rollout.strategy` is copied into `spec.strategy` unchanged; the chart does not pick a strategy, the environment values do (the GitOps values use `canary`). Only the gateway: it is stateless, the single entry point for the API, and `/version` names version and pod, which makes the traffic split visible. A `blueGreen` strategy would also need a preview Service; the chart has none, because canary was chosen. A Rollout starts a new revision only when the pod template changes (image, env, labels, the `checksum/*` annotations), not on a `replicas` or strategy change.
 
 **Container ports stay literal.** Client (Vite `--port 3000`) and ML (gunicorn script) fix their ports in the image; the .NET ports are set with `ASPNETCORE_URLS` and kept literal for symmetry. Service ports are values; YARP destinations and tests use the Service port values.
 
@@ -115,4 +120,5 @@ Argo CD renders the chart with `helm template` and applies the result itself (no
 - Upgrade dev → prod: 2 replicas, new migration Job, Ingress created, the SPA served on `relativa.local`.
 - Pre-upgrade hook: one dump per upgrade on the backup volume; the hook Job is gone after success.
 - `kubectl set image` drift makes `test-gateway` fail; `helm upgrade` with the same values restores the image.
+- 0.3.0 with `gateway.rollout.enabled=false`: default, dev and prod renders are identical to 0.2.0 apart from `helm.sh/chart` and the ConfigMap checksum. `relativa.configChecksum` hashes the rendered ConfigMap including its `helm.sh/chart` label, so any chart version bump rolls every app pod (seen when 0.3.0 reached the cluster), although `relativa.podLabels` leaves the version out; `enabled=true` without a strategy fails with `gateway.rollout.strategy must set canary or blueGreen`.
 - `helm uninstall --wait` leaves only `kube-root-ca.crt` and the `default` ServiceAccount in the namespace.
