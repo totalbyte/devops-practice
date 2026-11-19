@@ -130,7 +130,9 @@ kubectl argo rollouts dashboard
 kubectl -n antoniuk run curl --rm -it --restart=Never --image=curlimages/curl -- sh -c 'while true; do curl -s http://relativa-gateway:8080/version; echo; sleep 0.5; done'
 ```
 
-Дашборд — http://localhost:3100. Запити тільки з поду: `port-forward` з'єднується з одним подом і розподілу не покаже.
+Дашборд — одразу сторінка Rollout-а: http://localhost:3100/rollouts/rollout/antoniuk/relativa-gateway. Головна http://localhost:3100 відкривається в namespace з kubeconfig (`default`), де Rollout-ів немає, і вічно показує «Loading…» — або пряме посилання, або в полі NAMESPACE вгорі `antoniuk`. Запити тільки з поду: `port-forward` з'єднується з одним подом і розподілу не покаже. Цикл зупиняється `Ctrl+C`, под `curl` видаляється сам (`--rm`).
+
+В UI Argo CD: `relativa` → ліворуч **CLEAR ALL**, у полі Name ввести `gateway` (без галочок на конкретних іменах — інакше нові ReplicaSet-и й поди наступного релізу сховані фільтром). Якщо дерево не відповідає `--watch`, оновити сторінку (F5).
 
 У `relativa-gitops` у `charts/relativa/values-minikube.yaml` у блоці `gateway:` → `image:` змінити `tag: ""` → `tag: "1.3.0"`:
 
@@ -153,7 +155,7 @@ argocd app get relativa | Select-Object -First 14
 kubectl argo rollouts promote relativa-gateway -n antoniuk
 ```
 
-60 % → 30 с → 80 % → 30 с → `Healthy` (~1 хв), у циклі лише `1.3.0`. В UI те саме — меню `Rollout` → `Resume` / `Promote-Full`. 📸 `Healthy`, `1.3.0 (stable)`.
+60 % → 30 с → 80 % → 30 с → `Healthy` (~1–1,5 хв), у циклі лише `1.3.0`. В UI те саме — меню `Rollout` → `Resume` / `Promote-Full`. 📸 `Healthy`, `1.3.0 (stable)`.
 
 ## 5. Скасування релізу
 
@@ -183,7 +185,7 @@ argocd app get relativa --refresh
 kubectl argo rollouts get rollout relativa-gateway -n antoniuk
 ```
 
-`Healthy`, `1.3.0 (stable)` за кілька секунд, поди не перезапускаються. 📸 `git log`, `Healthy`.
+`Healthy`, `1.3.0 (stable)` за кілька секунд, поди не перезапускаються: stable-ReplicaSet отримує новий номер ревізії, а його поди лишаються ті самі (вік не скидається). `argocd app history relativa` — по рядку на кожен коміт з тими самими SHA, що в `git log`. 📸 `git log`, `Healthy`, `history`.
 
 Альтернатива: `kubectl argo rollouts retry rollout relativa-gateway -n antoniuk` — повторити той самий реліз з кроку 1, якщо проблему виправлено поза образом.
 
