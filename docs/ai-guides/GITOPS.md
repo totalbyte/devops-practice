@@ -1,6 +1,6 @@
 # GitOps -- Argo CD and the `relativa-gitops` Repository
 
-> **Last verified:** 2026-11-19 (Lab 6: Argo Rollouts controller as an Application from `argocd-apps/`, gateway as a canary `Rollout`, `retry` on `relativa`, chart 0.3.0, images `1.3.0` / `1.4.0`; the demo commands are in [ROLLOUTS-LAB6.md](../runbooks/ROLLOUTS-LAB6.md).) Earlier: 2026-10-28 (Initial GitOps setup: Argo CD v3.5.6 on minikube, App of Apps from `totalbyte/relativa-gitops`, chart 0.2.0, images `1.1.0` → `1.2.0`.)
+> **Last verified:** 2026-11-19 (Lab 6 demo: dashboard URL with the namespace, revision renumbering on revert.) Earlier: 2026-11-19 (Lab 6: Argo Rollouts controller as an Application from `argocd-apps/`, gateway as a canary `Rollout`, `retry` on `relativa`, chart 0.3.0, images `1.3.0` / `1.4.0`; the demo commands are in [ROLLOUTS-LAB6.md](../runbooks/ROLLOUTS-LAB6.md).) Earlier: 2026-10-28 (Initial GitOps setup: Argo CD v3.5.6 on minikube, App of Apps from `totalbyte/relativa-gitops`, chart 0.2.0, images `1.1.0` → `1.2.0`.)
 
 > **Maintenance obligation:** If you change the Argo CD setup -- the `Application` objects, `values-minikube.yaml`, the sync policy, the Argo CD version -- or anything under `helm/relativa/` that the GitOps copy must follow, update this file and its "Last verified" date, and [GITOPS-LAB5.md](../runbooks/GITOPS-LAB5.md) if demo commands change. See [AI-GUIDES-INDEX.md](../../AI-GUIDES-INDEX.md) for the full update matrix.
 
@@ -117,7 +117,7 @@ Changing a password later means changing the Secret by hand and restarting the p
 | What | Command | URL |
 |---|---|---|
 | Argo CD UI / CLI | `kubectl -n argocd port-forward svc/argocd-server 8443:443` | https://localhost:8443 (self-signed), `argocd login localhost:8443 --username admin --insecure` |
-| Argo Rollouts dashboard | `kubectl argo rollouts dashboard` (the plugin serves it locally, no port-forward) | http://localhost:3100 |
+| Argo Rollouts dashboard | `kubectl argo rollouts dashboard` (the plugin serves it locally, no port-forward) | http://localhost:3100/rollouts/rollout/antoniuk/relativa-gateway -- the start page uses the kubeconfig namespace (`default`) and stays at "Loading…" |
 | Gateway | `kubectl -n antoniuk port-forward svc/relativa-gateway 8080:8080` | http://localhost:8080/version |
 | Client | `kubectl -n antoniuk port-forward svc/relativa-client 3000:3000` | http://localhost:3000 (`Relativa v<version>` in the sidebar after login, `v<version>` in the login footer) |
 
@@ -174,7 +174,7 @@ gateway:
 | All pods on the new revision | `Synced` / `Healthy` | ~1 min after `promote` (two 30 s pauses) |
 | `kubectl argo rollouts abort` | `Synced` / `Degraded` | canary ReplicaSet scaled to 0, all pods back on the stable revision |
 
-`promote` and `abort` change only the Rollout `status`, never the `spec`, so the live manifest still equals Git: `Synced` throughout, and `selfHeal` has nothing to undo. After `abort`, Git still names the new tag while the cluster deliberately runs the old one, so the Rollout reports `Degraded` (`RolloutAborted`). The release is finished through Git: `git revert` of the tag commit puts the stable template back into `spec`, the Rollout recognises its own stable ReplicaSet and is `Healthy` within seconds, without restarting a pod. `kubectl argo rollouts retry rollout` would instead restart the same release from step 1.
+`promote` and `abort` change only the Rollout `status`, never the `spec`, so the live manifest still equals Git: `Synced` throughout, and `selfHeal` has nothing to undo. After `abort`, Git still names the new tag while the cluster deliberately runs the old one, so the Rollout reports `Degraded` (`RolloutAborted`). The release is finished through Git: `git revert` of the tag commit puts the stable template back into `spec`, the Rollout recognises its own stable ReplicaSet (it only gets the next revision number) and is `Healthy` within seconds, without restarting a pod. `kubectl argo rollouts retry rollout` would instead restart the same release from step 1.
 
 ---
 
